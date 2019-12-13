@@ -323,6 +323,101 @@ def plot_histogram(position, value , title = 'title', xlabel = 'x_label', ylabel
 
     return fig
 
+def plot_source_extraction_result(mouse_row_new):
+
+    '''
+    Generates and saves a contour plot and a trace plot for the specific mouse_row
+    '''
+    corr_min = round(eval(mouse_row_new['source_extraction_parameters'])['min_corr'], 1)
+    pnr_min = round(eval(mouse_row_new['source_extraction_parameters'])['min_pnr'], 1)
+
+    output_source_extraction = eval(mouse_row_new.loc['source_extraction_output'])
+    corr_path = output_source_extraction['meta']['corr']['main']
+    cn_filter = np.load(db.get_file(corr_path))
+
+    cnm_file_path = output_source_extraction['main']
+    cnm = load_CNMF(db.get_file(cnm_file_path))
+
+    figure, axes = plt.subplots(1)
+    axes.imshow(cn_filter)
+    coordinates = cm.utils.visualization.get_contours(cnm.estimates.A, np.shape(cn_filter), 0.2, 'max')
+    for c in coordinates:
+        v = c['coordinates']
+        c['bbox'] = [np.floor(np.nanmin(v[:, 1])), np.ceil(np.nanmax(v[:, 1])),
+                     np.floor(np.nanmin(v[:, 0])), np.ceil(np.nanmax(v[:, 0]))]
+        axes.plot(*v.T, c='w')
+    axes.set_title('min_corr = ' + f'{corr_min}')
+    axes.set_ylabel('min_pnr = ' + f'{pnr_min}')
+
+    fig_dir = 'data/interim/source_extraction/session_wise/meta/figures/contours/'
+    file_name = db.create_file_name(3, mouse_row_new.name)
+    figure.savefig(fig_dir + file_name + '.png')
+    ## up to here
+
+    fig, ax = plt.subplots(1)
+    C = cnm.estimates.C
+    C[0] += C[0].min()
+    for i in range(1, len(C)):
+        C[i] += C[i].min() + C[:i].max()
+        ax.plot(C[i])
+    ax.set_xlabel('t [frames]')
+    ax.set_yticks([])
+    ax.set_ylabel('activity')
+    fig.set_size_inches([10., .3 * len(C)])
+
+    fig_dir = 'data/interim/source_extraction/session_wise/meta/figures/traces/'
+    fig_name = fig_dir + db.create_file_name(3, mouse_row_new.name) + '.png'
+    fig.savefig(fig_name)
+
+    return
+
+
+def plot_source_extraction_result_specific_cell(mouse_row_new, cell_number):
+
+    '''
+    In the first plot shows correlation image and contour of the selected neurons.
+    In the second plot shows the traces for the selected neurons.
+    :param mouse_row_new: data base row
+    :param cell_number: array with the cells that are selected to be ploted
+    :return: None
+    '''
+    corr_min = round(eval(mouse_row_new['source_extraction_parameters'])['min_corr'], 1)
+    pnr_min = round(eval(mouse_row_new['source_extraction_parameters'])['min_pnr'], 1)
+
+    output_source_extraction = eval(mouse_row_new.loc['source_extraction_output'])
+    corr_path = output_source_extraction['meta']['corr']['main']
+    cn_filter = np.load(db.get_file(corr_path))
+
+    cnm_file_path = output_source_extraction['main']
+    cnm = load_CNMF(db.get_file(cnm_file_path))
+
+    f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
+    a0.imshow(cn_filter)
+    coordinates = cm.utils.visualization.get_contours(cnm.estimates.A, np.shape(cn_filter), 0.2, 'max')
+    for i in cell_number:
+        v = coordinates[i]['coordinates']
+        coordinates[i]['bbox'] = [np.floor(np.nanmin(v[:, 1])), np.ceil(np.nanmax(v[:, 1])),
+                     np.floor(np.nanmin(v[:, 0])), np.ceil(np.nanmax(v[:, 0]))]
+        a0.plot(*v.T, c='w')
+    a0.set_title('Contour Plot')
+
+    fig, ax = plt.subplots(1)
+    C = cnm.estimates.C
+    C[0] += C[0].min()
+    for i in range(cell_number):
+        C[i] += C[i].min() + C[:i].max()
+        a1.plot(C[i])
+    a1.set_xlabel('t [frames]')
+    a1.set_yticks([])
+    a1.set_title('Calcium Traces')
+    fig.set_size_inches([10., .3 * len(C)])
+
+    fig_dir = 'data/interim/source_extraction/session_wise/meta/figures/'
+    fig_name = fig_dir + db.create_file_name(3, mouse_row_new.name) + '_example.png'
+    f.savefig(fig_name)
+
+    return
+
 
 def plot_multiple_contours(rows, version = None , corr_array = None, pnr_array = None,session_wise = False):
     '''
