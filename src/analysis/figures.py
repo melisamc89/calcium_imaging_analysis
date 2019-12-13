@@ -323,6 +323,103 @@ def plot_histogram(position, value , title = 'title', xlabel = 'x_label', ylabel
 
     return fig
 
+def create_video(row, time_cropping, session_wise = False):
+
+    '''
+    This fuction creates a complete video with raw movie (motion corrected), source extracted cells and source extraction + background.
+    :param row: pandas dataframe containing the desired processing information to create the video. It can use the session_wise or trial_wise video.
+    :return:
+    '''
+
+    if session_wise:
+        input_mmap_file_path = eval(row.loc['alignment_output'])['main']
+    else:
+        input_mmap_file_path = eval(row.loc['motion_correction_output'])['main']
+
+    #load the mmap file
+    Yr, dims, T = cm.load_memmap(input_mmap_file_path)
+    logging.debug(f'{row.name} Loaded movie. dims = {dims}, T = {T}.')
+    #create a caiman movie with the mmap file
+    images = Yr.T.reshape((T,) + dims, order='F')
+    images = cm.movie(images)
+
+    #load source extraction result
+    output = eval(row.loc['source_extraction_output'])
+    cnm_file_path = output['main']
+    cnm = load_CNMF(db.get_file(cnm_file_path))
+
+    #estimate the background from the extraction
+    W, b0 = cm.source_extraction.cnmf.initialization.compute_W(Yr, cnm.estimates.A.toarray(), cnm.estimates.C,
+                                                               cnm.estimates.dims, 1.4 * 5, ssub=2)
+    cnm.estimates.W = W
+    cnm.estimates.b0 = b0
+    # this part could be use with the lastest caiman version
+    # movie_dir = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/processed/movies/'
+    # file_name = db.create_file_name(5,row.name)
+    # cnm.estimates.play_movie(cnm.estimates, images, movie_name= movie_dir + file_name + '.avi')
+
+    frame_range = slice(None, None, None)
+    # create a movie with the model : estimated A and C matrix
+    Y_rec = cnm.estimates.A.dot(cnm.estimates.C[:, frame_range])
+    Y_rec = Y_rec.reshape(dims + (-1,), order='F')
+    Y_rec = Y_rec.transpose([2, 0, 1])
+    # convert the variable to a caiman movie type
+    Y_rec = cm.movie(Y_rec)
+
+    ## this part of the function is a copy from a caiman version
+    ssub_B = int(round(np.sqrt(np.prod(dims) / W.shape[0])))
+    B = images[frame_range].reshape((-1, np.prod(dims)), order='F').T - \
+        cnm.estimates.A.dot(cnm.estimates.C[:, frame_range])
+    if ssub_B == 1:
+        B = b0[:, None] + W.dot(B - b0[:, None])
+    else:
+        B = b0[:, None] + (np.repeat(np.repeat(W.dot(
+            downscale(B.reshape(dims + (B.shape[-1],), order='F'),
+                      (ssub_B, ssub_B, 1)).reshape((-1, B.shape[-1]), order='F') -
+            downscale(b0.reshape(dims, order='F'),
+                      (ssub_B, ssub_B)).reshape((-1, 1), order='F'))
+            .reshape(
+            ((dims[0] - 1) // ssub_B + 1, (dims[1] - 1) // ssub_B + 1, -1), order='F'),
+            ssub_B, 0), ssub_B, 1)[:dims[0], :dims[1]].reshape(
+            (-1, B.shape[-1]), order='F'))
+    B = B.reshape(dims + (-1,), order='F').transpose([2, 0, 1])
+
+    Y_rec_2 = Y_rec + B
+    Y_res = images[frame_range] - Y_rec - B
+
+    images_np = np.zeros((time_cropping[1]-time_cropping[0],images.shape[1],images.shape[2]))
+    images_np = images[time_cropping[0]:time_cropping[1],:,:]
+    images_np = images_np / np.max(images_np)
+    images_np = cm.movie(images_np)
+
+    Y_rec_np = np.zeros((time_cropping[1]-time_cropping[0],images.shape[1],images.shape[2]))
+    Y_rec_np = Y_rec[time_cropping[0]:time_cropping[1],:,:]
+    Y_rec_np = Y_rec_np / np.max(Y_rec_np)
+    Y_rec_np = cm.movie(Y_rec_np)
+
+    Y_res_np = np.zeros((time_cropping[1]-time_cropping[0],images.shape[1],images.shape[2]))
+    Y_res_np = Y_res[time_cropping[0]:time_cropping[1],:,:]
+    Y_res_np = Y_res_np / np.max(Y_res_np)
+    Y_res_np = cm.movie(Y_res_np)
+
+    B_np = np.zeros((time_cropping[1]-time_cropping[0],images.shape[1],images.shape[2]))
+    B_np = B[time_cropping[0]:time_cropping[1],:,:]
+    B_np = B_np / np.max(B_np)
+    B_np = cm.movie(B_np)
+
+    mov1 = cm.concatenate((images_np, Y_rec_np), axis=2)
+
+    mov2 = cm.concatenate((B_np, Y_res_np), axis=2)
+
+    mov = cm.concatenate((mov1, mov2), axis=1)
+
+    figure_path = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/interim/movies/'
+    figure_name = db.create_file_name(5,row.name)
+    #mov.save(figure_path+figure_name+'.tif')
+    mov.save(figure_path+figure_name+'_'+f'{time_cropping[0]}' + '_' + f'{time_cropping[1]}'+'.tif')
+
+    return
+
 def plot_source_extraction_result(mouse_row_new):
 
     '''
@@ -375,6 +472,7 @@ def plot_source_extraction_result(mouse_row_new):
 def plot_source_extraction_result_specific_cell(mouse_row_new, cell_number):
 
     '''
+    (Still need to be finished)
     In the first plot shows correlation image and contour of the selected neurons.
     In the second plot shows the traces for the selected neurons.
     :param mouse_row_new: data base row
