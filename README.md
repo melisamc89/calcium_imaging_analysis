@@ -75,7 +75,7 @@ This is the structure for the analysis steps of the Calcium Imaging pipeline. He
 	    │	├──analysis_file_manipulation			<- Functions related to...(?)
 
 
-# DATA BASE ADMINISTRATION (src.data_base_manipulation)
+#DATA BASE ADMINISTRATION (src.data_base_manipulation)
 
 
 The module data_base_manipulation has a set of function that are related to structure of the data base, and to manipulation of it. 
@@ -139,7 +139,7 @@ Each of them works in each trial. The idea is that in each script many paramente
 Nevertheless, ideally one would like to select the best parameters for the hole session. Assuming cropping and motion correction parameters work well using the same in all the session (cropping should be the same), we would work in selection the best parameters in a way to optimize the extraction in the hole session. For these, we will combine souce extraction and component evaluation in the script paramerter_setting_source_extraction_session_wise, which analysis multiple trials. Also it uses some plotting as backup for decision making in the parameter selection for all the trials. 
 
 
-## 0.a.  Decoding
+##0.a.  Decoding
 
 1) Decode the files. This step preferably should be done in the pastiera computer, but can be done in another one if the python environment is the proper one (ask RONNY about this, and write here how to recreate the right environment)
 
@@ -148,7 +148,7 @@ The only relevant paramentes in this case are related to downsampling which is a
 
 
 
-## 0.b.  Equalizer
+##0.b.  Equalizer
 
 
 Equalization is the last added step in the pipeline. This step should be run with two main objectives. 
@@ -176,7 +176,7 @@ All steps after this are run equaly as if the videos where only decoded (but equ
 This step helps the parameter setting in source extraction (in session wise version) because the equalization change the initial conditions of the CNMF-E algorithm (as it is based in the summary images of correlation and peak to noise ratio for one-photon microscopy). By changing initial condition the detection improves if using the same parameters in the last trials as in the first trials. 
 
 
-## 1.  Cropping
+##1.  Cropping
 
 
 USE function at:
@@ -212,7 +212,7 @@ In this script we select 5 different cropping with different sizes, and run the 
 
 
 
-## 2. Motion correction
+##2. Motion correction
 
 
 USE script at:
@@ -259,7 +259,7 @@ Ready for next step.
 
 
 
-##3.a. Alignment
+##3.a.Alignment
 
 
 USE script at:
@@ -271,7 +271,7 @@ It is important to take into account that the signal gets deteriorated over time
 
 
 
-## 3.b.  Equalizer / contrast enhacer
+##3.b.Equalizer / contrast enhacer
 
 
 
@@ -285,7 +285,7 @@ Possible equalizing techniques :
 
 
 
-## 4. Source extraction
+##4.Source extraction
 
 
 USE script at:
@@ -343,7 +343,7 @@ Selection a range or corr and pnr values, there is a script that computes source
 Visual inspection of this figure can help to decide which values of pnr and corr are adecuate (selects the higher number of neurons that are 'real neurons'). Parameter selection of source extraction can be done in combination with paramenter seleccion of component evaluation in order to get a better solution.
 
 
-##5. Component Evaluation
+##5.Component Evaluation
 
 USE script at:
 '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/SRC/parameters_setting/parameters_setting_component_evaluation'
@@ -364,7 +364,7 @@ The script proposed runs for all source extraction versions selected different s
 
 
 
-# PARAMETER SELECTION FOR SESSION (or day) WISE ANALYSIS (src.parameter_setting)
+#PARAMETER SELECTION FOR SESSION (or day) WISE ANALYSIS (src.parameter_setting)
 
 
 Bleaching effect ===> Because of continuos exposure to the light of the microscope, the image gets bleached. The effect of the bleaching can be seen in figures save in the folders: 
