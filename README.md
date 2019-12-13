@@ -46,9 +46,8 @@ Project Organization
 
 This is the structure for the analysis steps of the Calcium Imaging pipeline. Here we explain steps for DATA BASE MANIPULATION, PARAMETER SELECTION AND RUNNING THE COMPLETE PIPELINE
 
-========================================================================================================================================================================================================
-STRUCTURE
-=======================================================================================================================================================================================================
+
+# STRUCTURE
 
 	├── src               					<- Source code for use in this project.
 	    │   ├── steps     					<- Main codes for the different steps of the pipeline
@@ -75,18 +74,18 @@ STRUCTURE
 	    │	├──data_base_manipulation			<- Functions related to excel reading, editing and version analysis update, also paramaters data base update
 	    │	├──analysis_file_manipulation			<- Functions related to...(?)
 
-========================================================================================================================================================================================================
-DATA BASE ADMINISTRATION (src.data_base_manipulation)
-========================================================================================================================================================================================================
+
+# DATA BASE ADMINISTRATION (src.data_base_manipulation)
+
 
 The module data_base_manipulation has a set of function that are related to structure of the data base, and to manipulation of it. 
 The excel sheet can be found at : /home/sebastian/Documents/Melisa/calcium_imaging_analysis/references/analysis_state_database (or in the server)
 
 There is also a parameters data base. Parameter selection is very relavant to guaranty realiable source extraction, and it should be tuned for each mouse (and probably also for each session, trial, resting condition). To organize this, the file /home/sebastian/Documents/Melisa/calcium_imaging_analysis/references/parameters_database contains the parameter selection for each one of this. Once the parameters had been selected, they can be automatically read from this file.
 
---------------------------------
-Important funcions data base: 
--------------------------------
+
+##Important funcions data base: 
+
 
 	*open_analysis_states_database ===> opens an excel file as a pandas dataframe structure. This file is saved in 'references/analysis/analysis_states_database'. But the fuction actually read 			the server version. Then when you save a new one, it is saved localy and in the server. 
 		    
@@ -100,33 +99,33 @@ Important funcions data base:
 	*set_version_analysis ==> once the step is computed, this funcion checks whether the used parameteres for a particular step were already used in the data base. If they were, it does nothing. 
 		If they were not, the function will update the version index to a new one. Later using append_or_to_merge_analysis_states_database and save_analysis_states_database funcions the data 			base will be updated  
 
-----------------------------------------
-Important funcions parameters data base: 
-----------------------------------------
+
+##Important funcions parameters data base: 
+
 
 	*set_parameters ===> writes the parameters selection in the '.xls' file
 		    
 	*get_parameters ===> reads the parameters for a particular mouse/session/trial/resting_condition/step for running the pipeline.
 
 
-================================================================================================================================
-FILE ADMINISTRATION
-========================================================================================================================================================================================================
+
+#FILE ADMINISTRATION
+
 
 Each step reads and saves processing steps of the pipeline in different file format. Most of the are readable from caiman.load() or LOADmmap funcions. Just to avoid confussions, here there is a general guide of the files systems.
 
-- Original videos are stored in '.raw' file ->  This file is accesible from the Inscopix software, but thanks to the generosity of Linux/Conda and the people who did this (R and F) this files can be decoded in the pastiera computers.
-- Decoded files are saved as a '.tif' file. Cropping opens and saves a '.tif' file after processing. Equalized files (IN PROGRESS) saves the file in the same format as cropping.
-- Motion corrected files are stored as '.mmap' files. Motion correction opens a '.tif' and saves a '.mmap' file.
-- Source extracted files are stored as '.hdf5' files. Source extraction opens a '.mmap' file and saves a '.hdf5' file.
-- Component evaluated files are stores as '.hdf5' files. Component evaluation reads a '.hdf5' file and saves the results in a '.hdf5' file. 
+* Original videos are stored in '.raw' file ->  This file is accesible from the Inscopix software, but thanks to the generosity of Linux/Conda and the people who did this (R and F) this files can be decoded in the pastiera computers.
+* Decoded files are saved as a '.tif' file. Cropping opens and saves a '.tif' file after processing. Equalized files (IN PROGRESS) saves the file in the same format as cropping.
+* Motion corrected files are stored as '.mmap' files. Motion correction opens a '.tif' and saves a '.mmap' file.
+* Source extracted files are stored as '.hdf5' files. Source extraction opens a '.mmap' file and saves a '.hdf5' file.
+* Component evaluated files are stores as '.hdf5' files. Component evaluation reads a '.hdf5' file and saves the results in a '.hdf5' file. 
 
 The memory consuming components (in terms of storage) are the decoded/cropping/motion_correction/equalization parts. If used the general 5 minutes video, each one creates an ~2/3Gb file. Source extraction and component evaluation files are not tha heavy (~100Mb)
 
 
-========================================================================================================================================================================================================
-PARAMETER SELECTION STEP BY STEP FOR TRIAL WISE ANALYSIS (src.parameter_setting)
-========================================================================================================================================================================================================
+
+#PARAMETER SELECTION STEP BY STEP FOR TRIAL WISE ANALYSIS (src.parameter_setting)
+
 
 The file parameter_setting is for setting paramenters in one particular trial going throught all the main pipeline (SIMILAR TO THE ACTUAL TRIAL_WISE_ANALYSIS). 
 
@@ -139,18 +138,18 @@ Each of them works in each trial. The idea is that in each script many paramente
 
 Nevertheless, ideally one would like to select the best parameters for the hole session. Assuming cropping and motion correction parameters work well using the same in all the session (cropping should be the same), we would work in selection the best parameters in a way to optimize the extraction in the hole session. For these, we will combine souce extraction and component evaluation in the script paramerter_setting_source_extraction_session_wise, which analysis multiple trials. Also it uses some plotting as backup for decision making in the parameter selection for all the trials. 
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.a.  Decoding
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 0.a.  Decoding
+
 1) Decode the files. This step preferably should be done in the pastiera computer, but can be done in another one if the python environment is the proper one (ask RONNY about this, and write here how to recreate the right environment)
 
 For decoding run function Decoder. (TO BE IMPLEMENTED, 	for now decoding can be run for one seledted file in parameter_selection or for all file sof a particular mouse in trial_wise_analysis). Decoding can be run separately because it does not envolved any parameters seleccion, so we can create a function for decode a set of videos. 
 The only relevant paramentes in this case are related to downsampling which is always set to 10Hz (same downsampling that has been used in the 1 photon Caiman paper)
 
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.b.  Equalizer
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 0.b.  Equalizer
+
 
 Equalization is the last added step in the pipeline. This step should be run with two main objectives. 
 
@@ -177,10 +176,8 @@ All steps after this are run equaly as if the videos where only decoded (but equ
 This step helps the parameter setting in source extraction (in session wise version) because the equalization change the initial conditions of the CNMF-E algorithm (as it is based in the summary images of correlation and peak to noise ratio for one-photon microscopy). By changing initial condition the detection improves if using the same parameters in the last trials as in the first trials. 
 
 
+## 1.  Cropping
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1.  Cropping
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 USE function at:
 '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/SRC/parameters_setting/parameters_setting_cropping' (Run by parts)
@@ -214,9 +211,9 @@ TEST CROPPING: parameter_setting scripts can be run in a small section of the fi
 In this script we select 5 different cropping with different sizes, and run the pipeline (with out component evaluation). That output is a figure that is saved in  directory = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/interim/cropping/meta/figures/cropping_inicialization/'. This figure contains tha contour plots for different cropping, but always using the same motion correction and source extraction paramenters. This step is important because the algorithm is really sensitive to changes in the seed or initial condiciton. Changes in the size of the FOV of course will lead to changes in the inicial condicion, that can lead to huge differences in the extraction. Do not forget to verify before generalizing your parameters to a bigger FOV. 
 
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-2. Motion correction
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 2. Motion correction
+
 
 USE script at:
 '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/SRC/parameters_setting/parameters_setting_motion_correction'
@@ -261,9 +258,8 @@ Optimal parameters correspond to --- values of crispness. The script prints in t
 Ready for next step.
 
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-3.a. Alignment
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+##3.a. Alignment
 
 
 USE script at:
@@ -274,9 +270,9 @@ It is important to take into account that the signal gets deteriorated over time
 
 
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-3.b.  Equalizer / contrast enhacer
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 3.b.  Equalizer / contrast enhacer
+
 
 
 Possible equalizing techniques : 
@@ -288,9 +284,9 @@ Possible equalizing techniques :
 
 
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-4. Source extraction
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 4. Source extraction
+
 
 USE script at:
 '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/SRC/parameters_setting/parameters_setting_source_extraction'
@@ -346,9 +342,9 @@ Selection a range or corr and pnr values, there is a script that computes source
 
 Visual inspection of this figure can help to decide which values of pnr and corr are adecuate (selects the higher number of neurons that are 'real neurons'). Parameter selection of source extraction can be done in combination with paramenter seleccion of component evaluation in order to get a better solution.
 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-5. Component Evaluation
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+##5. Component Evaluation
+
 USE script at:
 '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/SRC/parameters_setting/parameters_setting_component_evaluation'
 
@@ -367,9 +363,9 @@ The script proposed runs for all source extraction versions selected different s
 
 
 
-========================================================================================================================================================================================================
-PARAMETER SELECTION FOR SESSION (or day) WISE ANALYSIS (src.parameter_setting)
-========================================================================================================================================================================================================
+
+# PARAMETER SELECTION FOR SESSION (or day) WISE ANALYSIS (src.parameter_setting)
+
 
 Bleaching effect ===> Because of continuos exposure to the light of the microscope, the image gets bleached. The effect of the bleaching can be seen in figures save in the folders: 
 
@@ -397,9 +393,9 @@ Next problem is then how to select source extraction paramenters (and component 
 Finally, compare the results ==> compare cell counting, final footprints and calcium traces ! 
 
 
-========================================================================================================================================================================================================
-RUNNING THE COMPLETE PIPELINE STEP BY STEP
-========================================================================================================================================================================================================
+
+#RUNNING THE COMPLETE PIPELINE STEP BY STEP
+
 
 
 Once parameters are selected...Run the pipeline with all the steps with the best parameters, all the trials and resting/non resting conditions, all the sessions, all the mice! HAPPY :) 
