@@ -21,7 +21,7 @@ from matplotlib.patches import Rectangle
 
 #h_step = 10
 #gSig = 7
-#parameters_equalizer = {'expansion': False, 'make_template_from_trial': '6_R', 'equalizer': 'histogram_matching', 'histogram_step': h_step, 'gSig' : None}
+#parameters_equalizer = {'make_template_from_trial': '6_R', 'equalizer': 'histogram_matching', 'histogram_step': h_step, 'gSig' : None}
 #posibilities for equalizer : histogram_matching and fitting
 # for histogram matching, the histogram step is required
 # for fitting, the size of the area for the fitting is required (refer to explanation of how the fitting is done as a way that
@@ -48,8 +48,8 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
     output_tif_file_path = f'data/interim/equalizer/main/'
     mouse, session, init_trial, *r = df.iloc[0].name
 
-    histogram_name = f'mouse_{mouse}_session_{session}_init_trial_{init_trial}'
-    output_steps_file_path = f'data/interim/equalizer/meta/figures/histograms/'+histogram_name
+    #histogram_name = f'mouse_{mouse}_session_{session}_init_trial_{init_trial}'
+    #output_steps_file_path = f'data/interim/equalizer/meta/figures/histograms/'+histogram_name
 
     try:
         df.reset_index()[['trial', 'is_rest']].set_index(['trial', 'is_rest'], verify_integrity=True)
@@ -71,10 +71,11 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
     }
 
     if session_wise: ## UNDER DEVELOPMENT
+
         row_local = df.iloc[0]
         input_tif_file_list =eval(row_local['alignment_output'])['main']
         movie_original = cm.load(input_tif_file_list)  # load video as 3d array already concatenated
-        if parameters['expansion']:
+        if parameters['make_template_from_trial'] == 0:
             movie_equalized = do_equalization(movie_original)
         else:
             movie_equalized = np.empty_like(movie_original)
@@ -83,7 +84,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
             for j in range(int(movie_original.shape[0] / 100)):
                 want_to_equalize = movie_original[j * 100:(j + 1) * 100, :, :]
                 movie_equalized[j * 100:(j + 1) * 100, :, :] = do_equalization_from_template(reference=want_to_equalize, source=source)
-        # Save the movie
+        #Save the movie
         index = row_local.name
         new_index = db.replace_at_index1(index, 4 + 3, 2)
         row_local.name = new_index
@@ -130,14 +131,14 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
 
         for i in range(len(input_tif_file_list)):
             video= m_list[i]
-            if parameters['expansion']:
+            if parameters['make_template_from_trial'] == 0:
                 equalized_video = do_equalization(video)
             else:
                 m_list_reshape.append(video[:new_shape[0],:,:])
                 equalized_video = np.empty_like(video[:new_shape[0],:,:])
                 for j in range(int(min_shape[0]/100)):
-                    want_to_equelize = m_list_reshape[i][j*100:(j+1)*100,:,:]
-                    equalized_video[j*100:(j+1)*100,:,:] = do_equalization_from_template(reference=want_to_equelize,  source=source)
+                    want_to_equalize = m_list_reshape[i][j*100:(j+1)*100,:,:]
+                    equalized_video[j*100:(j+1)*100,:,:] = do_equalization_from_template(reference=want_to_equalize,  source=source)
             m_list_equalized.append(equalized_video)
 
         #convert the 3d np.array to a caiman movie and save it as a tif file, so it can be read by motion correction script.
@@ -199,18 +200,21 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
 def do_equalization(reference):
 
     '''
-    Do equalization in a way that the cumulative density function is a linear function on pixel value
-    '''
+    Do equalization in a way that the cumulative density function is a linear function on pixel value using the complete
+    range where the image is define.
+    :arg referece -> image desired to equalize
 
+    '''
     # flatten (turns an n-dim-array into 1-dim)
-    refV = reference.flatten()
     # sorted pixel values
-    srcInd = np.arange(0,2**16,len(refV))
-    refInd = np.argsort(refV)
+    srcInd = np.arange(0, 2 ** 16, 2 ** 16 / len(reference.flatten()))
+    srcInd = srcInd.astype(int)
+    refInd = np.argsort(reference.flatten())
     #assign...
-    dst = np.empty_like(refV)
+    dst = np.empty_like(reference.flatten())
     dst[refInd] = srcInd
     dst.shape = reference.shape
+
     return dst
 
 
@@ -253,6 +257,13 @@ def do_equalization_from_template(source = None, reference = None):
 
 def do_linear_fitting(time_signal):
 
+    '''
+    This function should take a concatenated video and make a fitting for correcting photobleaching.
+    This should be combined with a function that does the fitting for every pixel but in a smoothing way.
+
+    :param time_signal:
+    :return:
+    '''
 
 
     return a,b,r

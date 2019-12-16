@@ -50,8 +50,8 @@ states_df = db.open_analysis_states_database()
 #mouse_number = 56165
 mouse_number = 32364
 session = 1
-init_trial = 11
-end_trial = 16
+init_trial = 1
+end_trial = 6
 is_rest = None
 
 #%% Select first data

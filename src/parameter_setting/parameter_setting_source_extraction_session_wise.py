@@ -25,6 +25,7 @@ import caiman as cm
 import src.data_base_manipulation as db
 from src.steps.decoding import run_decoder as main_decoding
 from src.steps.cropping import run_cropper as main_cropping
+from src.steps.equalizer import  run_equalizer as main_equalizing
 from src.steps.cropping import cropping_interval
 from src.analysis.figures import plot_movie_frame
 from src.steps.motion_correction import run_motion_correction as main_motion_correction
@@ -153,15 +154,15 @@ for i in range(len(selection)):
 
 #%% Run equalization
 
-#selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, is_rest=0,
-                    #      decoding_v= 1,
-                    #      cropping_v = cropping_version,
-                    #      motion_correction_v=motion_correction_version,
-                    #      alignment_v=1, trial = 1)
+selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, trial = 1, is_rest=0,
+                          decoding_v= 1,
+                          cropping_v = 1,
+                          motion_correction_v=1,
+                         alignment_v=1)
 
-#h_step = 10
-#parameters_equalizer = {'make_template_from_trial': '1', 'equalizer': 'histogram_matching', 'histogram_step': h_step}
-#states_df = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
+h_step = 10
+parameters_equalizer = {'make_template_from_trial': '1', 'equalizer': 'histogram_matching', 'histogram_step': h_step}
+states_df = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
 #db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path=backup_path)
 
 #%%
@@ -288,7 +289,7 @@ figures.plot_multiple_contours_session_wise_evaluated(selected_rows)
 #%%
 ## SECOND, SOURCE EXTRACTION IN ALIGNED (AND EQUALIZED FILES)
 
-alignment_version = 1
+alignment_version = 2
 cropping_version = 1
 motion_correction_version = 1
 selected_rows = db.select(states_df,'source_extraction',mouse = mouse_number, session = session, is_rest= is_rest,
@@ -304,7 +305,7 @@ c, dview, n_processes = cm.cluster.setup_cluster(backend='local',
 
 gSig = 5
 gSiz = 4 * gSig + 1
-parameters_source_extraction = {'equalization':False,'session_wise': True, 'fr': 10, 'decay_time': 0.1,
+parameters_source_extraction = {'equalization':True,'session_wise': True, 'fr': 10, 'decay_time': 0.1,
                                 'min_corr': 0.65,
                                 'min_pnr': 5, 'p': 1, 'K': None, 'gSig': (gSig, gSig),
                                 'gSiz': (gSiz, gSiz),
@@ -326,6 +327,7 @@ figures.plot_corr_pnr_binary(aligned_row, corr_limits, pnr_limits, parameters_so
 mouse_row_new = main_source_extraction(aligned_row, parameters_source_extraction, dview)
 states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
 db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path=backup_path)
+
 
 
 ## evaluation
@@ -363,72 +365,6 @@ for i in range(len(selected_rows)):
 
 #figures.plot_multiple_contours_session_wise_evaluated(selected_rows)
 
-
-
-#%% DO NOT PAY ATENTION FROM HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-'''
-### This is somethings I am still working on FOR RECREATING THE MOVIE
-
-decoding_version = 1
-cropping_version = 1
-motion_correction_version = 1
-
-selected_rows = db.select(states_df,'source_extraction',mouse = 32364, session = session, trial = 1, is_rest= is_rest, decoding_v = 3,
-                          cropping_v = cropping_version,
-                          motion_correction_v = motion_correction_version, alignment_v= 0, source_extraction_v= 1 )
-
-row = selected_rows.iloc[0]
-
-#input_mmap_file_path = eval(row.loc['alignment_output'])['main']
-input_mmap_file_path = eval(row.loc['motion_correction_output'])['main']
-Yr, dims, T = cm.load_memmap(input_mmap_file_path)
-# logging.debug(f'{index} Loaded movie. dims = {dims}, T = {T}.')
-images = Yr.T.reshape((T,) + dims, order='F')
-images = cm.movie(images)
-
-output = eval(row.loc['source_extraction_output'])
-cnm_file_path = output['main']
-cnm = load_CNMF(db.get_file(cnm_file_path))
-W, b0 = cm.source_extraction.cnmf.initialization.compute_W(Yr, cnm.estimates.A.toarray(), cnm.estimates.C, cnm.estimates.dims, 1.4 *5,ssub=2)
-cnm.estimates.W = W
-cnm.estimates.b0 = b0
-#movie_dir = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/processed/movies/'
-#file_name = db.create_file_name(5,row.name)
-#cnm.estimates.play_movie(cnm.estimates, images, movie_name= movie_dir + file_name + '.avi')
-
-frame_range=slice(None, None, None)
-Y_rec = cnm.estimates.A.dot(cnm.estimates.C[:, frame_range])
-Y_rec = Y_rec.reshape(dims + (-1,), order='F')
-Y_rec = Y_rec.transpose([2, 0, 1])
-Y_rec = cm.movie(Y_rec)
-
-#mov = cm.concatenate((images, Y_rec), axis=2)
-#mov.play()
-
-ssub_B = int(round(np.sqrt(np.prod(dims) / W.shape[0])))
-B = images[frame_range].reshape((-1, np.prod(dims)), order='F').T - \
-    cnm.estimates.A.dot(cnm.estimates.C[:, frame_range])
-if ssub_B == 1:
-    B = b0[:, None] + W.dot(B - b0[:, None])
-else:
-    B = b0[:, None] + (np.repeat(np.repeat(W.dot(
-        downscale(B.reshape(dims + (B.shape[-1],), order='F'),
-                    (ssub_B, ssub_B, 1)).reshape((-1, B.shape[-1]), order='F') -
-        downscale(b0.reshape(dims, order='F'),
-                  (ssub_B, ssub_B)).reshape((-1, 1), order='F'))
-                                                  .reshape(
-        ((dims[0] - 1) // ssub_B + 1, (dims[1] - 1) // ssub_B + 1, -1), order='F'),
-                                                ssub_B, 0), ssub_B, 1)[:dims[0], :dims[1]].reshape(
-        (-1, B.shape[-1]), order='F'))
-B = B.reshape(dims + (-1,), order='F').transpose([2, 0, 1])
-
-
-Y_res = images[frame_range] - Y_rec - B
-
-mov = cm.concatenate((images, Y_rec), axis=2)
-
-mov = cm.concatenate((images, images), axis=2)
-'''
 
 #%% on development!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! THIS WAS FOR SELECTING PARAMETERS
 '''

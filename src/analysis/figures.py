@@ -472,7 +472,8 @@ def plot_source_extraction_result(mouse_row_new):
 def plot_source_extraction_result_specific_cell(mouse_row_new, cell_number):
 
     '''
-    (Still need to be finished)
+    (Still need to be finished) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    THERE IS AN ERROR IN THE
     In the first plot shows correlation image and contour of the selected neurons.
     In the second plot shows the traces for the selected neurons.
     :param mouse_row_new: data base row
