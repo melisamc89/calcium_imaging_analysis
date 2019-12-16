@@ -36,6 +36,7 @@ def run_decoder(row):
     row_local = db.set_version_analysis('decoding', row_local)
     raw_output = eval(row_local['raw_output'])
     input_raw_file_paths = raw_output['main']
+    #print(input_raw_file_paths)
     
     # Get the path WITHOUT -001 or -002 in the path and .raw as extension.
     # This does seem to work. All files are converted. 
@@ -43,6 +44,7 @@ def run_decoder(row):
     for path in input_raw_file_paths:
         if path[-8:-5] != '-00':
             input_raw_file_path = path
+            print(path)
 
     # Determine output .tif file path
     step_index = 0 # decoding is the first step

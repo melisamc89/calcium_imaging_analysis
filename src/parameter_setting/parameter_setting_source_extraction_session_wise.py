@@ -47,7 +47,8 @@ backup_path = 'references/analysis/backup/'
 
 states_df = db.open_analysis_states_database()
 
-mouse_number = 32363
+mouse_number = 32365
+#32363
 #32364#56165
 session = 1
 init_trial = 1
@@ -68,7 +69,7 @@ parameters_cropping = cropping_interval() #check whether it is better to do it l
 
 #%% Run decoding for group of data tha have the same cropping parameters (same mouse)
 
-for i in range(init_trial,end_trial):
+for i in range(init_trial+1,end_trial):
     selection = selected_rows.query('(trial ==' + f'{i}' + ')')
     for j in range(len(selection)):
         mouse_row = selection.iloc[j]
