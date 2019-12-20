@@ -44,7 +44,6 @@ def run_decoder(row):
     for path in input_raw_file_paths:
         if path[-8:-5] != '-00':
             input_raw_file_path = path
-            print(path)
 
     # Determine output .tif file path
     step_index = 0 # decoding is the first step

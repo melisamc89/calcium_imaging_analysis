@@ -27,6 +27,7 @@ import os
 import datetime
 import src.analysis_files_manipulation as fm
 from caiman.source_extraction.cnmf.initialization import downscale
+import logging
 
 
 def plot_movie_frame(row):

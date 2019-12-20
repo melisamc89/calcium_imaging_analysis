@@ -47,9 +47,8 @@ backup_path = 'references/analysis/backup/'
 
 states_df = db.open_analysis_states_database()
 
-mouse_number = 32365
-#32363
-#32364#56165
+mouse_number = 56165
+#32365#32363#32364#56165#56166
 session = 1
 init_trial = 1
 end_trial = 6
@@ -69,7 +68,7 @@ parameters_cropping = cropping_interval() #check whether it is better to do it l
 
 #%% Run decoding for group of data tha have the same cropping parameters (same mouse)
 
-for i in range(init_trial+1,end_trial):
+for i in range(init_trial,end_trial):
     selection = selected_rows.query('(trial ==' + f'{i}' + ')')
     for j in range(len(selection)):
         mouse_row = selection.iloc[j]
@@ -128,14 +127,6 @@ motion_correction_version = 1
 selected_rows = db.select(states_df,'alignment',mouse = mouse_number, session = session, is_rest= is_rest,
                           cropping_v = cropping_version,
                           motion_correction_v = motion_correction_version, alignment_v= 0)
-
-
-n_processes = psutil.cpu_count()
-cm.cluster.stop_server()
-# Start a new cluster
-c, dview, n_processes = cm.cluster.setup_cluster(backend='local',
-                                                 n_processes=n_processes,
-                                                single_thread=False)
 
 
 selection = selected_rows.query('(trial < ' + f'{6}' + ')' )
@@ -290,7 +281,7 @@ figures.plot_multiple_contours_session_wise_evaluated(selected_rows)
 #%%
 ## SECOND, SOURCE EXTRACTION IN ALIGNED (AND EQUALIZED FILES)
 
-alignment_version = 2
+alignment_version = 1
 cropping_version = 1
 motion_correction_version = 1
 selected_rows = db.select(states_df,'source_extraction',mouse = mouse_number, session = session, is_rest= is_rest,
@@ -306,7 +297,7 @@ c, dview, n_processes = cm.cluster.setup_cluster(backend='local',
 
 gSig = 5
 gSiz = 4 * gSig + 1
-parameters_source_extraction = {'equalization':True,'session_wise': True, 'fr': 10, 'decay_time': 0.1,
+parameters_source_extraction = {'equalization':False,'session_wise': True, 'fr': 10, 'decay_time': 0.1,
                                 'min_corr': 0.65,
                                 'min_pnr': 5, 'p': 1, 'K': None, 'gSig': (gSig, gSig),
                                 'gSiz': (gSiz, gSiz),
