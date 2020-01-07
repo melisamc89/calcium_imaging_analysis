@@ -30,7 +30,7 @@ import src.configuration # leave this here for users configuration
 import src.data_base_manipulation as db
 from src.steps.cropping import run_cropper as main_cropping
 from src.steps.cropping import cropping_interval
-from src.analysis.figures import plot_movie_frame, plot_movie_frame_cropped, get_fig_gSig_filt_vals
+from src.analysis.figures import plot_movie_frame, plot_movie_frame_cropped
 
 analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
 backup_path = 'references/analysis/backup/'

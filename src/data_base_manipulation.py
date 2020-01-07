@@ -256,12 +256,12 @@ def open_analysis_states_database(path = paths.analysis_states_database_path):
     '''
     if os.getlogin() == 'sebastian':
         logging.info('Downloading analysis states database...')
-        ssh = connect.get_SSH_connection()
-        sftp = ssh.open_sftp()
-        sftp.get(os.environ['PROJECT_DIR_SERVER'] + paths.analysis_states_database_path, os.environ['PROJECT_DIR_LOCAL'] + paths.analysis_states_database_path)
-        sftp.close()
-        ssh.close()
-        logging.info('Downloaded analysis states database')
+        #ssh = connect.get_SSH_connection()
+        #sftp = ssh.open_sftp()
+        #sftp.get(os.environ['PROJECT_DIR_SERVER'] + paths.analysis_states_database_path, os.environ['PROJECT_DIR_LOCAL'] + paths.analysis_states_database_path)
+        #sftp.close()
+        #ssh.close()
+        #logging.info('Downloaded analysis states database')
     
     return pd.read_excel(path,  dtype = {'date' : 'str', 'time' : 'str'}).set_index(paths.multi_index_structure)
 

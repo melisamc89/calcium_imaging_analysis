@@ -22,10 +22,7 @@ def run_source_extraction(row, parameters, dview, session_wise = False):
     '''
     This is the function for source extraction.
     Its goal is to take in a .mmap file,
-    perform source extraction on it using cnmf-e and save the cnmf object as a .pkl file.    
-    
-    This function is only runnable on the cn76 server because it requires parralel processing. 
-    
+    perform source extraction on it using cnmf-e and save the cnmf object as a .pkl file.
     Args:
         row: pd.DataFrame object
             The row corresponding to the analysis state to be source extracted. 
@@ -54,9 +51,9 @@ def run_source_extraction(row, parameters, dview, session_wise = False):
     # Determine output paths
     file_name = db.create_file_name(step_index, index)
     if parameters['session_wise']:
-        data_dir = 'data/interim/source_extraction/session_wise/'
+        data_dir = os.environ['DATA_DIR'] + 'data/interim/source_extraction/session_wise/'
     else:
-        data_dir = 'data/interim/source_extraction/trial_wise/'
+        data_dir = os.environ['DATA_DIR'] + 'data/interim/source_extraction/trial_wise/'
     output_file_path = data_dir + f'main/{file_name}.hdf5'
    
         

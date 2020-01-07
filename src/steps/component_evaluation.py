@@ -32,9 +32,9 @@ def run_component_evaluation(row, parameters, set_version = None, session_wise =
     source_extraction_parameters =  eval(row_local.loc['source_extraction_parameters'])
     input_hdf5_file_path = source_extraction_output['main']
     input_mmap_file_path = motion_correction_output['main']
-    basename = 'data/interim/component_evaluation/session_wise/' if source_extraction_parameters['session_wise'] else 'data/interim/component_evaluation/trial_wise/'
+    data_dir = os.environ['DATA_DIR'] + 'data/interim/component_evaluation/session_wise/' if source_extraction_parameters['session_wise'] else os.environ['DATA_DIR'] + 'data/interim/component_evaluation/trial_wise/'
     file_name = db.create_file_name(step_index, index)
-    output_file_path = basename + f'main/{file_name}.hdf5'
+    output_file_path = data_dir + f'main/{file_name}.hdf5'
     
     if set_version == None:
         # If the output version is not specified, determine it automatically.
@@ -42,8 +42,7 @@ def run_component_evaluation(row, parameters, set_version = None, session_wise =
     index = list(index)
     index[4 + step_index] = version
     index = tuple(index)    
-    
-    
+
     # Create a dictionary with parameters
     output = {
             'main': output_file_path,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: Sebastian,Casper
+@author: Sebastian,Casper,Melisa
 """
 
 import os
@@ -14,7 +14,6 @@ from caiman.source_extraction.cnmf import params as params
 
 import src.data_base_manipulation as db
 
-#step='motion_correction'
 
 def run_motion_correction(row, parameters, dview):
     '''
@@ -44,7 +43,6 @@ def run_motion_correction(row, parameters, dview):
     input_tif_file_path = eval(row_local.loc['cropping_output'])['main']
     if not os.path.isfile(input_tif_file_path):
         input_tif_file_path = db.get_expected_file_path('cropping', 'main/', index, 'tif')
-        print(input_tif_file_path)
         if not os.path.isfile(input_tif_file_path):
             logging.error('Cropping file not found. Cancelling motion correction.')
             return row_local
@@ -55,7 +53,7 @@ def run_motion_correction(row, parameters, dview):
     index = row_local.name
 
     # Get output file paths
-    data_dir = 'data/interim/motion_correction/'
+    data_dir = os.environ['DATA_DIR'] + 'data/interim/motion_correction/'
     file_name = db.create_file_name(step_index, index)
     output_meta_pkl_file_path = data_dir + f'meta/metrics/{file_name}.pkl'
           
@@ -85,7 +83,6 @@ def run_motion_correction(row, parameters, dview):
     # Rigid motion correction (in both cases)
     logging.info(f'{index} Performing rigid motion correction')
     t0 = datetime.datetime.today()
-
     
     # Create a MotionCorrect object   
     mc = MotionCorrect([input_tif_file_path], dview = dview, **opts.get_group('motion'))

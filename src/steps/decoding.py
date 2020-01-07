@@ -1,34 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-@author: Sebastian,Casper
+@author: Sebastian,Casper,Melisa
+
 """
 
 
 import os
 import logging
 import subprocess 
-import datetime 
+import datetime
 
 import src.data_base_manipulation as db
+#import src.configuration
 
 def run_decoder(row):
     '''
-    This is the function for the decoding step. In the decoding step
-    files are converted from .raw files to .tif files. 
-    
-    This function is only usable on the Sebastian's account on the pastiera pc. 
-        
-    Args:
-        index: tuple
-            The index of the analysis state to be decoded. 
-        row: pd.DataFrame object
-            The row corresponding to the analysis state to be decoded. 
-            
-    Returns:
-        index: tuple
-            The index of the decoded analysis state. 
-        row: pd.DataFrame object
-            The row corresponding to the decoded analysis state. 
+    This is the function for the decoding step. In the decoding step files are converted from .raw files to .tif files.
+
+    This function requires a particular environment to work. Ask Francesco, Ronny, Morgane or Melisa for further
+    information.
+
+    :param row: pd.DataFrame object
+            The row corresponding to the analysis state to be decoded.
+    :return: row: pd.DataFrame object
+            The row corresponding to the decoded analysis state.
     '''
 
     index = row.name
@@ -36,8 +31,7 @@ def run_decoder(row):
     row_local = db.set_version_analysis('decoding', row_local)
     raw_output = eval(row_local['raw_output'])
     input_raw_file_paths = raw_output['main']
-    #print(input_raw_file_paths)
-    
+
     # Get the path WITHOUT -001 or -002 in the path and .raw as extension.
     # This does seem to work. All files are converted. 
     input_raw_file_path = ''
@@ -48,14 +42,11 @@ def run_decoder(row):
     # Determine output .tif file path
     step_index = 0 # decoding is the first step
     file_name = db.create_file_name(step_index,index)
-    output_tif_file_path = f"data/interim/decoding/main/{file_name}.tif"
+    output_tif_file_path = os.environ['DATA_DIR'] + f"data/interim/decoding/main/{file_name}.tif"
 
     # Decoder paths
-    ana_3 = "~/anaconda3"
-    ana_2 = "~/anaconda2"
-    inscopix_env = 'inscopix_reader'
-    py_inscopix = os.path.join(ana_2,'envs',inscopix_env,'bin/python') 
-    decoder = "~/Documents/inscopix_reader_linux/python/downsampler.py" 
+    py_inscopix = os.environ['INSCOPIX_READER']
+    decoder = os.environ['DECODER']
     
     # Create a dictionary with the parameters
     output = {

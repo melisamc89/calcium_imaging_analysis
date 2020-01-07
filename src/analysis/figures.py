@@ -28,7 +28,7 @@ import datetime
 import src.analysis_files_manipulation as fm
 from caiman.source_extraction.cnmf.initialization import downscale
 import logging
-
+from random import randrange
 
 def plot_movie_frame(row):
     '''
@@ -56,6 +56,128 @@ def plot_movie_frame_cropped(row):
     pl.imshow(m[0,:,:],cmap='gray')
     return
 
+
+def plot_temporal_evolution(row,session_wise = False):
+    '''
+    After decoding this plots the time evolution of some pixel values in the ROI, the histogram if pixel values and
+    the ROI with the mark of the position for the randomly selected pixels
+    If non specified it uses the trial video, if not it uses the aligned version of the videos.
+    If alignement version == 2, then it uses the equalized version
+
+    '''
+    if session_wise:
+        output = row['alignment_output']
+    else:
+        output = row['decoding_output']
+    decoded_file = eval(output)['main']
+    if row.name[7] == 2:
+        decoded_file = eval(output)['equalization']['main']
+    movie_original = cm.load(decoded_file)
+
+    figure = plt.figure(constrained_layout=True)
+    gs = figure.add_gridspec(5, 6)
+
+    figure_ax1 = figure.add_subplot(gs[0:2, 0:3])
+    figure_ax1.set_title('ROI: ' + f"mouse_{row.name[0]}", fontsize = 15)
+    figure_ax1.set_yticks([])
+    figure_ax1.set_xticks([])
+
+    figure_ax2 = figure.add_subplot(gs[2:5, 0:3])
+    figure_ax2.set_xlabel('Time [frames]', fontsize = 15)
+    figure_ax2.set_ylabel('Pixel value', fontsize = 15)
+    figure_ax2.set_title('Temporal Evolution', fontsize = 15)
+
+    figure_ax1.imshow(movie_original[0,:,:], cmap = 'gray')
+    color = ['b', 'r' , 'g', 'c', 'm']
+    for i in range(5):
+        x = randrange(movie_original.shape[1]-5)+5
+        y = randrange(movie_original.shape[2]-5)+5
+        [x_, _x, y_, _y] = [x-5,x+5,y-5,y+5]
+        rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color=color[i], linestyle='-', linewidth=2)
+        figure_ax1.add_patch(rect)
+        figure_ax2.plot(np.arange(0,movie_original.shape[0],), movie_original[:,x,y], color = color[i])
+
+        figure_ax_i = figure.add_subplot(gs[i, 4:])
+        figure_ax_i.hist(movie_original[:,x,y],20, color = color[i])
+        figure_ax_i.set_xlim((500,1200))
+        figure_ax_i.set_ylabel('#')
+        figure_ax_i.set_xlabel('Pixel value')
+
+    path = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/interim/decoding/meta/'
+    name = db.create_file_name(1,row.name)
+    figure.savefig(path + name + '.png')
+
+    return
+
+def funcitontocreate:
+
+    '''
+    figure, axes = plt.subplots(3,2)
+    axes[0,0].imshow(movie_original[0,:,:], cmap = 'gray')
+    axes[0,0].set_title('ROI')
+
+    [x_, _x, y_, _y] = [15,25,15,25]
+    rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color='r', linestyle='-', linewidth=2)
+    axes[0, 0].add_patch(rect)
+
+    for i in range(len(m_list)):
+        axes[0,1].hist(m_list[i][:,20,20],bins = np.arange(600,1000))
+    axes[0,1].set_xlim((500,1000))
+    axes[0,1].set_ylabel('#')
+    axes[0,1].set_xlabel('Pixel value')
+    axes[0,1].set_title('RED SQUARE')
+    axes[0,1].legend(['1','2','3','4','5'])
+
+    [x_, _x, y_, _y] = [15,25,135,145]
+    rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color='b', linestyle='-', linewidth=2)
+    axes[0, 0].add_patch(rect)
+
+    for i in range(len(m_list)):
+        axes[1,0].hist(m_list[i][:,20,140],bins = np.arange(600,1000))
+    axes[1,0].set_xlim((500,1000))
+    axes[1,0].set_ylabel('#')
+    axes[1,0].set_xlabel('Pixel value')
+    axes[1,0].set_title('BLUE SQUARE')
+    axes[1,0].legend(['1','2','3','4','5'])
+
+
+
+    [x_, _x, y_, _y] = [135,145,135,145]
+    rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color='g', linestyle='-', linewidth=2)
+    axes[0, 0].add_patch(rect)
+    for i in range(len(m_list)):
+        axes[1,1].hist(m_list[i][:,140,140],bins = np.arange(600,1000))
+    axes[1,1].set_xlim((500,1000))
+    axes[1,1].set_ylabel('#')
+    axes[1,1].set_xlabel('Pixel value')
+    axes[1,1].set_title('GREEN SQUARE')
+    axes[1,1].legend(['1','2','3','4','5'])
+
+    [x_, _x, y_, _y] = [85,95,25,35]
+    rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color='m', linestyle='-', linewidth=2)
+    axes[0, 0].add_patch(rect)
+    for i in range(len(m_list)):
+        axes[2,0].hist(m_list[i][:,90,30],bins = np.arange(600,1000))
+    axes[2,0].set_xlim((500,1000))
+    axes[2,0].set_ylabel('#')
+    axes[2,0].set_xlabel('Pixel value')
+    axes[2,0].set_title('MAGENTA SQUARE')
+    axes[2,0].legend(['1','2','3','4','5'])
+
+
+    [x_, _x, y_, _y] = [25,35,85,95]
+    rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color='c', linestyle='-', linewidth=2)
+    axes[0, 0].add_patch(rect)
+    for i in range(len(m_list)):
+        axes[2,1].hist(m_list[i][:,30,90],bins = np.arange(600,1000))
+    axes[2,1].set_xlim((500,1000))
+    axes[2,1].set_ylabel('#')
+    axes[2,1].set_xlabel('Pixel value')
+    axes[2,1].set_title('CYAN SQUARE')
+    axes[2,1].legend(['1','2','3','4','5'])
+    '''
+
+    return
 
 def get_fig_gSig_filt_vals(row, gSig_filt_vals):
     '''

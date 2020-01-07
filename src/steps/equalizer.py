@@ -45,7 +45,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
     # Sort the dataframe correctly
     df = selected_rows.sort_values(by=paths.multi_index_structure)
     # Determine the output path
-    output_tif_file_path = f'data/interim/equalizer/main/'
+    output_tif_file_path = os.environ['DATA_DIR'] + f'data/interim/equalizer/main/'
     mouse, session, init_trial, *r = df.iloc[0].name
 
     #histogram_name = f'mouse_{mouse}_session_{session}_init_trial_{init_trial}'
@@ -266,7 +266,7 @@ def do_linear_fitting(time_signal):
     '''
 
 
-    return a,b,r
+    return
 
 #%%%b gitignore
 ''' 

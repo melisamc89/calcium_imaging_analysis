@@ -58,7 +58,7 @@ def run_alignmnet(states_df, parameters, dview):
 
     # Determine the output .mmap file name
     file_name = f'mouse_{mouse}_session_{session}_v{alignment_v}'
-    output_mmap_file_path = f'data/interim/alignment/main/{file_name}.mmap'
+    output_mmap_file_path = os.environ['DATA_DIR'] + f'data/interim/alignment/main/{file_name}.mmap'
 
     try:
         df.reset_index()[['trial', 'is_rest']].set_index(['trial', 'is_rest'], verify_integrity=True)
@@ -113,9 +113,9 @@ def run_alignmnet(states_df, parameters, dview):
 
     # Concatenate them using the concat function
     m_concat = cm.concatenate(m_list, axis=0)
-    data_dir = 'data/interim/alignment/main/'
+    data_dir = os.environ['DATA_DIR'] + 'data/interim/alignment/main/'
     file_name = db.create_file_name(step_index, index)
-    fname= m_concat.save(data_dir  + '/' + file_name + '.mmap', order='C')
+    fname= m_concat.save(data_dir + file_name + '.mmap', order='C')
 
     #meta_pkl_dict['pw_rigid']['cropping_points'] = [x_, _x, y_, _y]
     #output['meta']['cropping_points'] = [x_, _x, y_, _y]

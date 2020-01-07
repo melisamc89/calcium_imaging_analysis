@@ -46,7 +46,7 @@ def run_cropper(row, parameters):
     row_local = db.set_version_analysis('cropping',row_local)
     index = row_local.name
     file_name =  db.create_file_name(step_index, index)
-    output_tif_file_path = f"data/interim/cropping/main/{file_name}.tif"
+    output_tif_file_path = os.environ['DATA_DIR'] + f"data/interim/cropping/main/{file_name}.tif"
     
     
     # Create a dictionary with the output

@@ -35,14 +35,13 @@ import src.analysis.metrics as metrics
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 
 
-#%% Paths
-analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
-backup_path = 'references/analysis/backup/'
+# Paths
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/analysis_states_database.xlsx'
+backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 #parameters_path = 'references/analysis/parameters_database.xlsx'
 
 ## Open thw data base with all data
 states_df = db.open_analysis_states_database()
-
 
 #%% DECODING
 # Select all the data corresponding to a particular mouse. Ex: 56165.
@@ -71,7 +70,7 @@ db.save_analysis_states_database(states_df, path=analysis_states_database_path, 
 
 #%% MOTION CORRECTION
 # Select rows from the data base fo the next analysis step motion correction
-selected_rows = db.select(states_df,'motion_correction',32364)
+selected_rows = db.select(states_df,'motion_correction',56165)
 mouse_row = selected_rows.iloc[0]
 
 #For visualization: plot different filter sizes
@@ -123,11 +122,13 @@ for strides in strides_vector:
     mouse_row_new = db.set_version_analysis('motion_correction', mouse_row_new)
     states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
     db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path = backup_path)
+cm.stop_server(dview=dview)
 
 
 #%% SOURCE EXTRACTION
 
-selected_rows = db.select(states_df,'source_extraction',56165, motion_correction_v=2)
+selected_rows = db.select(states_df,'source_extraction',56165)
+mouse_row = selected_rows.iloc[0]
 
 parameters_source_extraction ={'session_wise': False, 'fr': 10, 'decay_time': 0.1, 'min_corr': 0.77, 'min_pnr': 6.6,
                                'p': 1, 'K': None, 'gSig': (5, 5), 'gSiz': (20, 20), 'merge_thr': 0.7, 'rf': 60,
@@ -138,15 +139,19 @@ parameters_source_extraction ={'session_wise': False, 'fr': 10, 'decay_time': 0.
                                'center_psf': True, 'border_pix': 0, 'normalize_init': False,
                                'del_duplicates': True, 'only_init': True}
 
-mouse_row = selected_rows.iloc[0]
+
 
 mouse_row_new = main_source_extraction(mouse_row, parameters_source_extraction, dview)
 mouse_row_new = db.set_version_analysis('source_extraction', mouse_row_new)
 states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
 db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path = backup_path)
+cm.stop_server(dview=dview)
 
 
 #%% COMPONENT EVALUATION
+
+selected_rows = db.select(states_df,'component_evaluation',56165)
+mouse_row = selected_rows.iloc[0]
 
 min_SNR = 3           # adaptive way to set threshold on the transient size
 r_values_min = 0.85    # threshold on space consistency (if you lower more components
@@ -156,8 +161,9 @@ parameters_component_evaluation = {'min_SNR': min_SNR,
                                    'rval_thr': r_values_min,
                                    'use_cnn': False}
 
-cm.stop_server(dview=dview)
-mouse_row_new = main_component_evaluation(mouse_row_new, parameters_component_evaluation)
+mouse_row_new = main_component_evaluation(mouse_row, parameters_component_evaluation)
+states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
+db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path = backup_path)
 
 component_evaluation_output = eval(mouse_row_new['component_evaluation_output'])
 input_hdf5_file_path = component_evaluation_output['main']
