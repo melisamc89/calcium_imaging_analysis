@@ -48,10 +48,9 @@ backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database()
 
 mouse_number = 56165
-#32365#32363#32364#56165#56166
 session = 1
 init_trial = 1
-end_trial = 6
+end_trial = 22
 is_rest = None
 
 #%% Select first data

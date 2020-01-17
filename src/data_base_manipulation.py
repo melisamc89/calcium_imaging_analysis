@@ -19,6 +19,7 @@ import math
 import datetime
 import shutil
 import numpy as np
+import numpy as np
 
 import src.paths as paths
 import src.server as connect
@@ -276,14 +277,15 @@ def save_analysis_states_database(states_df, path , backup_path):
     make_backup(path, backup_path)
 
     
-    if eval(os.environ['LOCAL']):
-        logging.info('Uploading analysis states database...')
-        ssh = connect.get_SSH_connection()
-        sftp = ssh.open_sftp()
-        sftp.put(os.environ['PROJECT_DIR_LOCAL'] + paths.analysis_states_database_path, os.environ['PROJECT_DIR_SERVER'] + paths.analysis_states_database_path)
-        sftp.close()
-        ssh.close()
-        logging.info('Uploaded analysis states database')
+    #if eval(os.environ['LOCAL']):
+    #    logging.info('Uploading analysis states database...')
+    #    ssh = connect.get_SSH_connection()
+    #    sftp = ssh.open_sftp()
+    #    sftp.put(os.environ['PROJECT_DIR_LOCAL'] + paths.analysis_states_database_path, os.environ['PROJECT_DIR_SERVER'] + paths.analysis_states_database_path)
+    #    sftp.close()
+    #    ssh.close()
+    #    logging.info('Uploaded analysis states database')
+
     return
 
 def append_to_or_merge_with_states_df(states_df, inp):
@@ -679,9 +681,7 @@ def crop_movies_to_clips(m_list, clip_length):
 
 def get_file(path):
     '''
-    Universal function to obtain files. It checks if the file exists. If it is
-    on the local machine and the file doesn't exist, it tries to download the file.
-
+    Universal function to obtain files.
     Args:
         path: str
             Path with respect to project directory
@@ -692,7 +692,6 @@ def get_file(path):
         else:
             logging.warning('File does not exist locally')
             try:
-                download(path)
                 return path
             except IOError:
                 logging.error('File does not exist on the server either!')

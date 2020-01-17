@@ -5,7 +5,7 @@ Created on Fri Sep 20 11:50:40 2019
 
 @author: sebastian
 """
-
+import os
 # Define the steps in the pipeline (in order)
 steps = [
         'decoding', 
@@ -21,10 +21,9 @@ steps = [
         ]
 
 # Paths 
-analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
-backup_path = 'references/analysis/backup/'
-parameters_path = 'references/analysis/parameters_database.xlsx'
-
+analysis_states_database_path = os.environ['PROJECT_DIR']  + 'references/analysis/analysis_states_database.xlsx'
+backup_path = os.environ['PROJECT_DIR']  + 'references/analysis/backup/'
+parameters_path = os.environ['PROJECT_DIR']  + 'references/analysis/parameters_database.xlsx'
 
 # Multi Index Structure
 data_structure = ['mouse', 'session', 'trial', 'is_rest']
@@ -32,7 +31,6 @@ analysis_structure = [f'{step}_v' for step in steps]
 multi_index_structure = data_structure + analysis_structure
 
 # Columns
-
 columns = data_structure + ['experiment_parameters', 
             'experiment_comments', 
             'raw_output', 

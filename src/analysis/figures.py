@@ -109,7 +109,7 @@ def plot_temporal_evolution(row,session_wise = False):
 
     return
 
-def funcitontocreate:
+def funcitontocreate():
 
     '''
     figure, axes = plt.subplots(3,2)
