@@ -13,10 +13,10 @@ ana_3 = "~/anaconda3"
 ana_2 = "~/anaconda2"
 inscopix_env = 'inscopix_reader'
 os.environ['INSCOPIX_READER_LOCAL'] = os.path.join(ana_2, 'envs', inscopix_env, 'bin/python')
-os.environ['INSCOPIX_READER_SERVER'] = "~/envs/inscopix_reader/bin/pyhton"
+os.environ['INSCOPIX_READER_SERVER'] = "/memdyn/melisa/envs/inscopix_reader/bin/python"
 
 os.environ['DECODER_LOCAL'] =  "~/Documents/inscopix_reader_linux/python/downsampler.py"
-os.environ['DECODER_SERVER'] = "/memdyn/melisa/inscopix_reader_linux/python/downsampler.py"
+os.environ['DECODER_SERVER'] = "/memdyn/melisa/src/inscopix_reader_linux/python/downsampler.py"
 
 os.environ['LOCAL_USER'] = 'sebastian'
 os.environ['SERVER_USER'] = 'mmaidana'

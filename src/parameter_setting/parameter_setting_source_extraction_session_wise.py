@@ -15,10 +15,6 @@ import pylab as pl
 import pandas as pd
 from scipy.sparse import csr_matrix
 
-# This should be in another file. Let's leave it here for now
-sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
-sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
-
 import matplotlib.pyplot as plt
 import src.configuration
 import caiman as cm
@@ -42,16 +38,17 @@ from caiman.source_extraction.cnmf.initialization import downscale
 
 
 # Paths
-analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
-backup_path = 'references/analysis/backup/'
+# Paths
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
+backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
+#parameters_path = 'references/analysis/parameters_database.xlsx'
 
-states_df = db.open_analysis_states_database()
+states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
 mouse_number = 56165
-#32365#32363#32364#56165#56166
 session = 1
 init_trial = 1
-end_trial = 6
+end_trial = 22
 is_rest = None
 
 #%% Select first data
@@ -59,7 +56,6 @@ selected_rows = db.select(states_df,'decoding',mouse = mouse_number,session=sess
 mouse_row = selected_rows.iloc[0]
 mouse_row = main_decoding(mouse_row)
 plot_movie_frame(mouse_row)
-
 
 #%% select cropping parameters
 parameters_cropping = cropping_interval() #check whether it is better to do it like this or to use the functions get
@@ -122,15 +118,13 @@ for i in range(init_trial,end_trial):
 motion_correction_version = mouse_row.name[6]
 
 #%% alignment
-cropping_version = 1
-motion_correction_version = 1
 selected_rows = db.select(states_df,'alignment',mouse = mouse_number, session = session, is_rest= is_rest,
                           cropping_v = cropping_version,
                           motion_correction_v = motion_correction_version, alignment_v= 0)
 
-
-selection = selected_rows.query('(trial < ' + f'{6}' + ')' )
+#selection = selected_rows.query('(trial < ' + f'{6}' + ')' )
 #selection1 = selection.query('is_rest == 0')
+selection = selected_rows
 parameters_alignment = {'make_template_from_trial': '1', 'gSig_filt': (5, 5), 'max_shifts': (25, 25), 'niter_rig': 1,
                         'strides': (48, 48),'overlaps': (96, 96), 'upsample_factor_grid': 2, 'num_frames_split': 80,
                         'max_deviation_rigid': 15,'shifts_opencv': True, 'use_cuda': False, 'nonneg_movie': True,
@@ -145,22 +139,19 @@ for i in range(len(selection)):
     db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
 
 #%% Run equalization
+#selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, trial = 1, is_rest=0,
+                        #  decoding_v= 1,
+                        #  cropping_v = 1,
+                        #  motion_correction_v=1,
+                        # alignment_v=1)
 
-selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, trial = 1, is_rest=0,
-                          decoding_v= 1,
-                          cropping_v = 1,
-                          motion_correction_v=1,
-                         alignment_v=1)
-
-h_step = 10
-parameters_equalizer = {'make_template_from_trial': '1', 'equalizer': 'histogram_matching', 'histogram_step': h_step}
-states_df = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
+#h_step = 10
+#parameters_equalizer = {'make_template_from_trial': '1', 'equalizer': 'histogram_matching', 'histogram_step': h_step}
+#states_df = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
 #db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path=backup_path)
 
 #%%
 ### FIRST, RUN EXTRACTION IN THE DIFFERENT TRIALS/RESTING CONDITION INDEPENDENTLY, LATER USE THE CONCATENATED FILES
-cropping_version = 1
-motion_correction_version = 1
 selected_rows = db.select(states_df,'source_extraction',mouse = mouse_number, session = session, is_rest= is_rest,
                           cropping_v = cropping_version,
                           motion_correction_v = motion_correction_version, alignment_v= 0, source_extraction_v= 0)

@@ -6,12 +6,13 @@ import caiman as cm
 import datetime
 import pickle
 import src.data_base_manipulation as db
+import src.configuration
 
 def get_corr_pnr(index, row, gSig=None):
     ''' This function gets an analysis state and a gSig absolute value
     and creates correlation and pnr images for it.'''
     # Define data directory
-    data_dir = 'data/interim/source_extraction/trial_wise/'
+    data_dir = os.environ['DATA_DIR']  + 'data/interim/source_extraction/trial_wise/'
     if type(gSig) == type(None):
         gSig = db.get_parameters('source_extraction', index[0], index[1], index[2], index[3])['gSig'][0]
 
@@ -62,7 +63,7 @@ def get_corr_pnr(index, row, gSig=None):
 def get_corr_pnr_path(index, gSig_abs=None):
     fname = db.create_file_name(2, index)
     os.chdir(os.environ['PROJECT_DIR'])
-    corr_dir = 'data/interim/source_extraction/trial_wise/meta/corr'
+    corr_dir = os.environ['DATA_DIR']  + 'data/interim/source_extraction/trial_wise/meta/corr'
     corr_path = None
     for path in os.listdir(corr_dir):
         if fname in path:
@@ -71,7 +72,7 @@ def get_corr_pnr_path(index, gSig_abs=None):
             else:
                 if path[-5] == str(gSig_abs):
                     corr_path = os.path.join(corr_dir, path)
-    pnr_dir = 'data/interim/source_extraction/trial_wise/meta/pnr'
+    pnr_dir = os.environ['DATA_DIR']  + 'data/interim/source_extraction/trial_wise/meta/pnr'
     pnr_path = None
     for path in os.listdir(pnr_dir):
         if fname in path:

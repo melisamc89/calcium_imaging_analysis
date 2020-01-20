@@ -5,7 +5,7 @@ Created on Fri Sep 20 11:50:40 2019
 
 @author: sebastian
 """
-
+import os
 # Define the steps in the pipeline (in order)
 steps = [
         'decoding', 
@@ -20,11 +20,9 @@ steps = [
         'component_evaluation'
         ]
 
-# Paths 
-analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
-backup_path = 'references/analysis/backup/'
-parameters_path = 'references/analysis/parameters_database.xlsx'
-
+# Paths
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
+backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 
 # Multi Index Structure
 data_structure = ['mouse', 'session', 'trial', 'is_rest']

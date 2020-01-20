@@ -47,8 +47,8 @@ def run_cropper(row, parameters):
     index = row_local.name
     file_name =  db.create_file_name(step_index, index)
     output_tif_file_path = os.environ['DATA_DIR'] + f"data/interim/cropping/main/{file_name}.tif"
-    
-    
+
+
     # Create a dictionary with the output
     output = {
             'main' : output_tif_file_path,
@@ -59,9 +59,9 @@ def run_cropper(row, parameters):
                             'time': datetime.datetime.today().strftime("%H:%M:%S"),
                             }
                     }
-            }  
+            }
 
-    # Spatial copping  
+    # Spatial copping
     logging.info(f'{index} Loading movie')
     m = cm.load(input_tif_file_path)
     logging.info(f'{index} Loaded movie')
@@ -76,17 +76,17 @@ def run_cropper(row, parameters):
     # Temporal cropping
     #if parameters['crop_temporal']:
         # m, timeline = do_temporal_cropping(m, parameters['cropping_points_temporal'])
-        # The option below is to get a timeline which indicates on which 
+        # The option below is to get a timeline which indicates on which
         # frames clips are cut out and how long those clips were.
         # I eventually decided this is not neccesary. The temporal cropping points are enough
-        # to reconstruct this and are more easily saved (namely in the 
+        # to reconstruct this and are more easily saved (namely in the
         # master file list under 'cropping_parameters')
-        
+
 #        timeline_pkl_file_path = f'data/interim/cropping/meta/timeline/{file_name}.pkl'
 #        output['meta']['timeline'] = timeline_pkl_file_path
 #        with open(timeline_pkl_file_path,'wb') as f:
-#            pickle.dump(timeline, f)       
-        
+#            pickle.dump(timeline, f)
+
     # Save the movie
     m.save(output_tif_file_path)
     # Write necessary variables to the trial index and row_local
@@ -142,10 +142,40 @@ def cropping_interval():
     x2 = int(input("Limit X2 : "))
     y1 = int(input("Limit Y1 : "))
     y2 = int(input("Limit Y2 : "))
-    parameters_cropping = {'crop_spatial': True, 'cropping_points_spatial': [y1, y2, x1, x2],
+    parameters_cropping = {'crop_spatial': True, 'cropping_points_spatial': [y1, y2, x1, x2], 'segmentation': False,
                            'crop_temporal': False, 'cropping_points_temporal': []}
     #print(parameters_cropping)
     return parameters_cropping
+
+def cropping_segmentation(parameters_cropping):
+    '''
+    This function takes the cropping interval and segment the image in 4 different regions.
+    The pipeline should lated run in all the different regions.
+    Returns:
+    '''
+    cropping_parameters_list = []
+    [y1, y2, x1, x2] = parameters_cropping['cropping_points_spatial']
+    if parameters_cropping['segmentation'] == True:
+        y1_new1 = y1
+        y2_new1 = round((y2 + y1 ) / 2) - 15
+        y1_new2 = round((y2 + y1) /2 )+ 15
+        y2_new2 = y2
+        x1_new1 = x1
+        x2_new1 = round((x2 + x1 ) / 2) - 15
+        x1_new2 = round((x2 + x1) /2) + 15
+        x2_new2 = x2
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new1, y2_new1, x1_new1, x2_new1], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new1, y2_new1, x1_new2, x2_new2], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new2, y2_new2, x1_new1, x2_new1], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new2, y2_new2, x1_new2, x2_new2], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+    else:
+        cropping_parameters_list.append(parameters_cropping)
+
+    return cropping_parameters_list
 
 def plot_movie_frame(row):
     '''

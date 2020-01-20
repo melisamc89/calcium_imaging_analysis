@@ -11,14 +11,11 @@ AND NOT REALLY PROPERLY ORGANIZED
 """
 
 import os
-import sys
 import psutil
 import logging
 import numpy as np
-# This should be in another file. Let's leave it here for now
-sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
-sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
 
+#%%
 import src.configuration
 import caiman as cm
 import src.data_base_manipulation as db
@@ -26,7 +23,7 @@ from src.steps.decoding import run_decoder as main_decoding
 from src.steps.cropping import run_cropper as main_cropping
 from src.steps.cropping import cropping_interval
 from src.analysis.figures import plot_movie_frame, plot_movie_frame_cropped, get_fig_gSig_filt_vals
-
+#%%
 from src.steps.motion_correction import run_motion_correction as main_motion_correction
 from src.steps.source_extraction import run_source_extraction as main_source_extraction
 from src.steps.component_evaluation import run_component_evaluation as main_component_evaluation
@@ -34,14 +31,14 @@ import src.analysis_files_manipulation as fm
 import src.analysis.metrics as metrics
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 
-
+#%%
 # Paths
-analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/analysis_states_database.xlsx'
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
 backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 #parameters_path = 'references/analysis/parameters_database.xlsx'
 
 ## Open thw data base with all data
-states_df = db.open_analysis_states_database()
+states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
 #%% DECODING
 # Select all the data corresponding to a particular mouse. Ex: 56165.
@@ -55,8 +52,8 @@ db.save_analysis_states_database(states_df, analysis_states_database_path, backu
 #%% CROPPING
 # Select the rows for cropping
 selected_rows = db.select(states_df,'cropping',56165)
-
 mouse_row = selected_rows.iloc[0]
+
 plot_movie_frame(mouse_row)
 #%%
 parameters_cropping = cropping_interval() #check whether it is better to do it like this or to use the functions get
@@ -142,7 +139,6 @@ parameters_source_extraction ={'session_wise': False, 'fr': 10, 'decay_time': 0.
 
 
 mouse_row_new = main_source_extraction(mouse_row, parameters_source_extraction, dview)
-mouse_row_new = db.set_version_analysis('source_extraction', mouse_row_new)
 states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
 db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path = backup_path)
 cm.stop_server(dview=dview)
