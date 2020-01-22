@@ -147,6 +147,38 @@ def cropping_interval():
     #print(parameters_cropping)
     return parameters_cropping
 
+
+def cropping_segmentation(parameters_cropping):
+    '''
+    This function takes the cropping interval and segment the image in 4 different regions.
+    The pipeline should lated run in all the different regions.
+    Returns:
+    '''
+    cropping_parameters_list = []
+    [y1, y2, x1, x2] = parameters_cropping['cropping_points_spatial']
+    if parameters_cropping['segmentation'] == True:
+        y1_new1 = y1
+        y2_new1 = round((y2 + y1 ) / 2) - 15
+        y1_new2 = round((y2 + y1) /2 )+ 15
+        y2_new2 = y2
+        x1_new1 = x1
+        x2_new1 = round((x2 + x1 ) / 2) - 15
+        x1_new2 = round((x2 + x1) /2) + 15
+        x2_new2 = x2
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new1, y2_new1, x1_new1, x2_new1], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new1, y2_new1, x1_new2, x2_new2], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new2, y2_new2, x1_new1, x2_new1], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+        cropping_parameters_list.append({'crop_spatial': True, 'cropping_points_spatial': [y1_new2, y2_new2, x1_new2, x2_new2], 'segmentation': False,
+                               'crop_temporal': False, 'cropping_points_temporal': []})
+    else:
+        cropping_parameters_list.append(parameters_cropping)
+
+    return cropping_parameters_list
+
+
 def plot_movie_frame(row):
     '''
     This function creates an image for visual inspection of cropping points.

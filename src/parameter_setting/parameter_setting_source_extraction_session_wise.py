@@ -19,6 +19,7 @@ from scipy.sparse import csr_matrix
 sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
 sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
 
+
 import matplotlib.pyplot as plt
 import src.configuration
 import caiman as cm
@@ -47,8 +48,8 @@ backup_path = 'references/analysis/backup/'
 
 states_df = db.open_analysis_states_database()
 
-mouse_number = 56165
-session = 1
+mouse_number = 56166
+session = 2
 init_trial = 1
 end_trial = 22
 is_rest = None
