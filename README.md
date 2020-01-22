@@ -270,7 +270,6 @@ It is important to take into account that the signal gets deteriorated over time
 
 
 
-
 ##3.b.Equalizer / contrast enhacer
 
 
@@ -282,6 +281,8 @@ Possible equalizing techniques :
 3) Kernel Smoothing
 
 
+
+1) Histogram matching was perform in two different ways. The equalization con be done with the aim of matching to histograms, or with the aim of expanding the entire histogram to the complete range of definition for the pixel values (in this case 2**16). Based on preliminary attemps using matching from templates (coded implementes) and complete range expansion (using image J and posterior procesing), we decided to work with the complete range expansion for contrast enhacement.
 
 
 
@@ -395,8 +396,6 @@ Finally, compare the results ==> compare cell counting, final footprints and cal
 
 
 #RUNNING THE COMPLETE PIPELINE STEP BY STEP
-
-
 
 Once parameters are selected...Run the pipeline with all the steps with the best parameters, all the trials and resting/non resting conditions, all the sessions, all the mice! HAPPY :) 
 
