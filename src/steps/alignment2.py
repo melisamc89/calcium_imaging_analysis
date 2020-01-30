@@ -26,7 +26,7 @@ from random import randint
 step_index = 3
 
 
-def run_alignmnet(states_df, parameters, dview):
+def run_alignmnet(selected_rows, parameters, dview):
     '''
     This is the main function for the alignment step. It applies methods
     from the CaImAn package used originally in motion correction
@@ -46,7 +46,7 @@ def run_alignmnet(states_df, parameters, dview):
     '''
 
     # Sort the dataframe correctly
-    df = states_df.copy()
+    df = selected_rows.copy()
     df = df.sort_values(by=paths.multi_index_structure)
 
     # Determine the mouse and session of the dataset
@@ -103,7 +103,6 @@ def run_alignmnet(states_df, parameters, dview):
     new_y1 = max(y_)
     new_y2 = max(_y)
     m_list = []
-    fig, ax = plt.subplots(1)
     for i in range(len(input_mmap_file_list)):
         m = cm.load(input_mmap_file_list[i])
         motion_correction_output = eval(df.iloc[i].loc['motion_correction_output'])
@@ -169,19 +168,16 @@ def run_alignmnet(states_df, parameters, dview):
 
     # Create a timeline and store it
     timeline = [[trial_index_list[0], 0]]
+    timepoints = [0]
     for i in range(1, len(m_list)):
         m = m_list[i]
         timeline.append([trial_index_list[i], timeline[i - 1][1] + m.shape[0]])
-    #    timeline_pkl_file_path = f'data/interim/alignment/meta/timeline/{file_name}.pkl'
-    #    with open(timeline_pkl_file_path,'wb') as f:
-    #        pickle.dump(timeline,f)
-    #    output['meta']['timeline'] = timeline_pkl_file_path
-    output['meta']['timeline'] = timeline
-
-
-    #    # Delete the motion corrected movies
-    #    for fname in mc.fname_tot_rig:
-    #        os.remove(fname)
+        timepoints.append(timepoints[i-1]+ m.shape[0])
+        timeline_pkl_file_path = os.environ['DATA_DIR'] + f'data/interim/alignment/meta/timeline/{file_name}.pkl'
+        with open(timeline_pkl_file_path,'wb') as f:
+            pickle.dump(timeline,f)
+    output['meta']['timeline'] = timeline_pkl_file_path
+    timepoints.append(movie.shape[0])
 
     dt = int((datetime.datetime.today() - t0).seconds / 60)  # timedelta in minutes
     output['meta']['duration']['concatenation'] = dt
@@ -190,5 +186,23 @@ def run_alignmnet(states_df, parameters, dview):
     for idx, row in df.iterrows():
         df.loc[idx, 'alignment_output'] = str(output)
         df.loc[idx, 'alignment_parameters'] = str(parameters)
+
+    ## modify all motion correction file to the aligned version
+    data_dir = os.environ['DATA_DIR'] + 'data/interim/motion_correction/main/'
+    for i in range(len(input_mmap_file_list)):
+        row = df.iloc[i].copy()
+        motion_correction_output_list.append(motion_correction_output)
+        aligned_movie = movie[timepoints[i]:timepoints[i+1]]
+        file_name = db.create_file_name(2, selected_rows.iloc[i].name)
+        motion_correction_output_aligned = aligned_movie.save(data_dir + file_name + '_els' + '.mmap',  order='C')
+        new_output= {'main' : motion_correction_output_aligned }
+        new_dict = eval(row['motion_correction_output'])
+        new_dict.update(new_output)
+        row['motion_correction_output'] = str(new_dict)
+        df = db.append_to_or_merge_with_states_df(df, row)
+
+    #    # Delete the motion corrected movies
+    #    for fname in mc.fname_tot_rig:
+    #        os.remove(fname)
 
     return df
