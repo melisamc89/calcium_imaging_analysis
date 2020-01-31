@@ -33,7 +33,6 @@ backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
 mouse_number = 56165
-session = 2
 is_rest = None
 
 decoding_version = 1
@@ -43,61 +42,101 @@ source_extraction_version = 1
 
 figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/'
 
+data_path = '/home/sebastian/Documents/Melisa/neural_analysis/data/calcium_traces_concatenation/'
 typical_size = []
 component_evaluation_version = 1
 
-for cropping_version in [1,2,3,4]:
-    selected_rows = db.select(states_df, 'component_evaluation', mouse=mouse_number, session=session, is_rest=is_rest,
-                              decoding_v=decoding_version,
-                              cropping_v=cropping_version,
-                              motion_correction_v=motion_correction,
-                              alignment_v=alignment_version,
-                              source_extraction_v=source_extraction_version,
-                              component_evaluation_v= component_evaluation_version)
-    A_list = [] ## list for contour matrix on multiple trials
-    A_size = [] ## list for the size of A (just to verify it is always the same size)
-    FOV_size = [] ## list for the cn filter dim (to verify it is always the same dims)
-    A_number_components = [] ## list with the total number of components extracted for each trial
-    C_dims = [] ## dimension of C, to keep track of timeline
-    C_list = [] ## list with traces for each trial
+for session in [1, 2, 4]:
+    A = []
+    C = []
+    trials = []
+    trials_time = []
+    for cropping_version in [1,3,4,2]:
+        A_list = []  ## list for contour matrix on multiple trials
+        A_size = []  ## list for the size of A (just to verify it is always the same size)
+        FOV_size = []  ## list for the cn filter dim (to verify it is always the same dims)
+        A_number_components = []  ## list with the total number of components extracted for each trial
+        C_dims = []  ## dimension of C, to keep track of timeline
+        C_list = []  ## list with traces for each trial
+        evaluated_trials = []
+        selected_rows = db.select(states_df, 'component_evaluation', mouse=mouse_number, session=session, is_rest=is_rest,
+                                  decoding_v=decoding_version,
+                                  cropping_v=cropping_version,
+                                  motion_correction_v=motion_correction,
+                                  alignment_v=alignment_version,
+                                  source_extraction_v=source_extraction_version,
+                                  component_evaluation_v= component_evaluation_version)
 
-    for i in range(len(selected_rows)):
+        for i in range(len(selected_rows)):
+            row = selected_rows.iloc[i]
+            component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']
+            corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']
+            cnm = load_CNMF(component_evaluation_hdf5_file_path)
+            cn_filter = np.load(db.get_file(corr_path))
 
-        row = selected_rows.iloc[i]
-        component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']
-        corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']
-        cnm = load_CNMF(component_evaluation_hdf5_file_path)
-        cn_filter = np.load(db.get_file(corr_path))
+            FOV_size.append(cn_filter.shape)
+            A_size.append(cnm.estimates.A.shape[0])
+            A_number_components.append(cnm.estimates.idx_components.shape[0])
+            A_list.append(cnm.estimates.A[:,cnm.estimates.idx_components])
+            C_dims.append(cnm.estimates.C.shape)
+            size = cnm.estimates.A[:,cnm.estimates.idx_components].sum(axis=0)
+            for j in range(len(cnm.estimates.idx_components)):
+                typical_size.append(size[0,j])
+            C_list.append(cnm.estimates.C[cnm.estimates.idx_components,:])
+            evaluated_trials.append((selected_rows.iloc[i].name[2]-1) *2 + selected_rows.iloc[i].name[3] +1)
 
-        FOV_size.append(cn_filter.shape)
-        A_size.append(cnm.estimates.A.shape[0])
-        A_number_components.append(cnm.estimates.idx_components.shape[0])
-        A_list.append(cnm.estimates.A[:,cnm.estimates.idx_components])
-        C_dims.append(cnm.estimates.C.shape)
-        size = cnm.estimates.A[:,cnm.estimates.idx_components].sum(axis=0)
-        for j in range(len(cnm.estimates.idx_components)):
-            typical_size.append(size[0,j])
-        C_list.append(cnm.estimates.C[cnm.estimates.idx_components,:])
+        ## add a size restriction on the neurons that will further be proceced. This restriction boudary
+        # decision is based in the histogram of typical neuronal sizes
+        new_A_list = []
+        new_C_list = []
+        for i in range(len(A_list)):
+            accepted_size=[]
+            size = A_list[i].sum(axis=0)
+            for j in range(size.shape[1]):
+                if size[0,j] > 15 and size[0,j] < 25:
+                    accepted_size.append(j)
+            new_A_list.append(A_list[i][:,accepted_size])
+            new_C_list.append(C_list[i][accepted_size,:])
+        A_list = new_A_list
+        C_list = new_C_list
+        spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=0.9, max_dist= 15)
+
+        time=0
+        timeline=[0]
+        for i in range(len(C_dims)):
+            time = time + C_dims[i][1]
+            timeline.append(timeline[i]+C_dims[i][1])
+        C_matrix = np.zeros((spatial_union.shape[1],time))
+        for i in range(spatial_union.shape[1]):
+            for j in range(assignments.shape[1]):
+                if math.isnan(assignments[i,j]) == False:
+                    C_matrix[i][timeline[j]:timeline[j+1]] = (C_list[j])[int(assignments[i,j]),:]
+        #file_name = 'mouse_56165_session' + f'{session}'+'_cropping_v_'+f'{cropping_version}'+'.npy'
+        #np.save(data_path+file_name , C_matrix)
+        C.append(C_matrix)
+        A.append(spatial_union)
+        trials.append(evaluated_trials)
+        trials_time.append(timeline)
+
+
+nneurons = 0
+for i in range(len(C)):
+    nneurons = nneurons + A[i].shape[1]
+
+C_FOV = np.zeros((nneurons, C[0].shape[1]))
+time = trials_time[0]
+nneurons = 0
+for i in range(len(C)):
+    j_nneurons = A[i].shape[1]
+    for j in range(len(time)-1):
+        if j in trials[i]:
+            C_FOV[nneurons:nneurons + j_nneurons,time[j]:time[j+1]] = C[i][:,trials_time[i][j]:trials_time[i][j+1]]
+    nneurons = nneurons + j_nneurons
+
 
 figure, axes = plt.subplots(1)
 axes.hist(typical_size, bins = 25)
 
-## add a size restriction on the neurons that will further be proceced. This restriction boudary
-# decision is based in the histogram of typical neuronal sizes
-
-new_A_list = []
-new_C_list = []
-for i in range(len(A_list)):
-    accepted_size=[]
-    size = A_list[i].sum(axis=0)
-    for j in range(size.shape[1]):
-        if size[0,j] > 15 and size[0,j] < 25:
-            accepted_size.append(j)
-    new_A_list.append(A_list[i][:,accepted_size])
-    new_C_list.append(C_list[i][accepted_size,:])
-
-A_list = new_A_list
-C_list = new_C_list
 
 ### this part computes center of mass and distance between center of mass of the contours
 A_center_of_mass_list_x = []
@@ -106,7 +145,7 @@ A_template = []
 trial_belonging = []
 for i in range(len(A_list)):
     for j in range(A_list[i].shape[1]):
-        cm_coordinates = com(A_list[i][:, j],FOV_size[0][0], FOV_size[0][1])
+        cm_coordinates = com(A_list[i][:, j],FOV_size[i][0], FOV_size[i][1])
         A_center_of_mass_list_x.append(cm_coordinates[0][0])
         A_center_of_mass_list_y.append(cm_coordinates[0][1])
         trial_belonging.append(i+1)
@@ -131,7 +170,7 @@ figure_name = db.create_file_name(5,row.name)
 figure.savefig( figure_path + figure_name + '.png')
 
 figure1, axes = plt.subplots(1)
-for i in range(1,43):
+for i in range(1,126):
     new_vector_x=[]
     new_vector_y=[]
     for j in range(len(A_center_of_mass_list_y)):
@@ -180,7 +219,7 @@ for n in range(5):
             axes[n, m].plot(*v.T, c='w')
 
 
-spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=0.9, max_dist= 5)
+spatial_union, assignments, match = register_multisession(A=A_list[0:41], dims=FOV_size[0], thresh_cost=0.9, max_dist= 5)
 
 coordinates = cm.utils.visualization.get_contours(spatial_union, np.shape(cn_filter), 0.2, 'max')
 for c in coordinates:
