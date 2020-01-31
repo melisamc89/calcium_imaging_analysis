@@ -49,8 +49,7 @@ component_evaluation_version = 1
 for session in [1, 2, 4]:
     A = []
     C = []
-    trials = []
-    trials_time = []
+    registration = []
     for cropping_version in [1,3,4,2]:
         A_list = []  ## list for contour matrix on multiple trials
         A_size = []  ## list for the size of A (just to verify it is always the same size)
@@ -101,37 +100,50 @@ for session in [1, 2, 4]:
         C_list = new_C_list
         spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=0.9, max_dist= 15)
 
-        time=0
-        timeline=[0]
-        for i in range(len(C_dims)):
-            time = time + C_dims[i][1]
-            timeline.append(timeline[i]+C_dims[i][1])
-        C_matrix = np.zeros((spatial_union.shape[1],time))
-        for i in range(spatial_union.shape[1]):
-            for j in range(assignments.shape[1]):
-                if math.isnan(assignments[i,j]) == False:
-                    C_matrix[i][timeline[j]:timeline[j+1]] = (C_list[j])[int(assignments[i,j]),:]
-        #file_name = 'mouse_56165_session' + f'{session}'+'_cropping_v_'+f'{cropping_version}'+'.npy'
-        #np.save(data_path+file_name , C_matrix)
-        C.append(C_matrix)
         A.append(spatial_union)
-        trials.append(evaluated_trials)
-        trials_time.append(timeline)
+        C.append(C_list)
+        registration.append(assignments)
+
+    time=0
+    timeline=[0]
+    for i in range(42):
+        time = time + C[0][i].shape[1]
+        timeline.append(timeline[i]+C[0][i].shape[1])
+
+    nneurons = 0
+    for i in range(len(C)):
+        nneurons = nneurons + A[i].shape[1]
+
+    C_matrix = np.zeros((nneurons,time))
+
+    nneurons = 0
+    for crop in range(len(C)):
+        for i in range(A[crop].shape[1]):
+            for j in range(registration[crop].shape[1]):
+                if math.isnan(registration[crop][i,j]) == False:
+                    if C_matrix[i+nneurons][timeline[j]:timeline[j+1]].shape == (C[crop][j])[int(registration[crop][i,j]),:].shape:
+                        C_matrix[i+nneurons][timeline[j]:timeline[j+1]] = (C[crop][j])[int(registration[crop][i,j]),:]
+        nneurons = nneurons + A[crop].shape[1]
+    #file_name = 'mouse_56165_session' + f'{session}'+'_cropping_v_'+f'{cropping_version}'+'.npy'
+    #np.save(data_path+file_name , C_matrix)
 
 
-nneurons = 0
-for i in range(len(C)):
-    nneurons = nneurons + A[i].shape[1]
+figure, axes = plt.subplots(1)
+C_0 = C_matrix.copy()
+C_0[0] += C_0[0].min()
+for i in range(1, len(C_matrix)):
+    C_0[i] += C_0[i].min() + C_0[:i].max()
+    axes.plot(C_0[i])
+axes.set_xlabel('t [frames]')
+axes.set_yticks([])
+axes.vlines(timeline,0, 150000, color = 'k')
+axes.set_ylabel('activity')
+figure.set_size_inches([50., .5 * len(C_0)])
+figure.savefig('/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/mouse_56165_session_1_3.png')
 
-C_FOV = np.zeros((nneurons, C[0].shape[1]))
-time = trials_time[0]
-nneurons = 0
-for i in range(len(C)):
-    j_nneurons = A[i].shape[1]
-    for j in range(len(time)-1):
-        if j in trials[i]:
-            C_FOV[nneurons:nneurons + j_nneurons,time[j]:time[j+1]] = C[i][:,trials_time[i][j]:trials_time[i][j+1]]
-    nneurons = nneurons + j_nneurons
+
+
+
 
 
 figure, axes = plt.subplots(1)
