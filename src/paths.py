@@ -15,10 +15,10 @@ steps = [
         # piecewise rigidly motion corrected
         'alignment', # Multiple videos (e.g. all trials of a session, 210 min) are
         # rigid motion corrected to each other, resulting in a long aligned video
-        'equalization'
+        'equalization',
         'source_extraction', # neural activity is deconvolved from the videos
         # trial-wise or session-wise
-        'component_evaluation'
+        'component_evaluation',
         'registration'
         ]
 
