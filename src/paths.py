@@ -15,9 +15,11 @@ steps = [
         # piecewise rigidly motion corrected
         'alignment', # Multiple videos (e.g. all trials of a session, 210 min) are
         # rigid motion corrected to each other, resulting in a long aligned video
+        'equalization'
         'source_extraction', # neural activity is deconvolved from the videos
         # trial-wise or session-wise
         'component_evaluation'
+        'registration'
         ]
 
 # Paths 
@@ -38,4 +40,3 @@ columns = data_structure + ['experiment_parameters',
 # for each step, add a 'v' (version), 'parameters', 'output' and 'comments' columns
 for step in steps:
     columns += [f'{step}_{idx}' for idx in ['v','parameters','output','comments']]
-columns += ['analyzed_Sebastian'] # whether or not Sebastian has analyzed the data fully

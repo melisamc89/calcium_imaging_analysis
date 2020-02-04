@@ -31,7 +31,7 @@ def run_source_extraction(row, parameters, dview, session_wise = False):
         row: pd.DataFrame object
             The row corresponding to the source extracted analysis state.   
     '''
-    step_index = 4
+    step_index = 5
     row_local = row.copy()
     row_local.loc['source_extraction_parameters'] = str(parameters)
     row_local = db.set_version_analysis('source_extraction',row_local,session_wise)
@@ -41,7 +41,7 @@ def run_source_extraction(row, parameters, dview, session_wise = False):
     if parameters['session_wise']:
         input_mmap_file_path = eval(row_local.loc['alignment_output'])['main']
         if parameters['equalization']:
-            input_mmap_file_path =eval(row_local['alignment_output'])['equalizing_output']['main']
+            input_mmap_file_path =eval(row_local['equalization_output'])['main']
     else: 
         input_mmap_file_path = eval(row_local.loc['motion_correction_output'])['main']
     if not os.path.isfile(input_mmap_file_path):

@@ -61,7 +61,7 @@ def run_alignmnet(selected_rows, parameters, dview):
     output_mmap_file_path = os.environ['DATA_DIR'] + f'data/interim/alignment/main/{file_name}.mmap'
 
     try:
-        df.reset_index()[['trial', 'is_rest']].set_index(['trial', 'is_rest'], verify_integrity=True)
+        df.reset_index()[['session','trial', 'is_rest']].set_index(['session','trial', 'is_rest'], verify_integrity=True)
     except ValueError:
         logging.error('You passed multiple of the same trial in the dataframe df')
         return df

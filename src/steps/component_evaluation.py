@@ -16,7 +16,7 @@ import src.data_base_manipulation as db
 
 def run_component_evaluation(row, parameters, set_version = None, session_wise = False, equalization = False):
 
-    step_index = 5
+    step_index = 6
     row_local = row.copy()
     row_local.loc['component_evaluation_parameters'] = str(parameters)
     row_local = db.set_version_analysis('component_evaluation',row_local,session_wise)
@@ -26,7 +26,7 @@ def run_component_evaluation(row, parameters, set_version = None, session_wise =
     if session_wise:
         motion_correction_output = eval(row_local.loc['alignment_output'])
     if equalization:
-        motion_correction_output = eval(row_local['alignment_output'])['equalizing_output']['main']
+        motion_correction_output = eval(row_local['equalization_output'])
 
     source_extraction_output = eval(row_local.loc['source_extraction_output'])
     source_extraction_parameters =  eval(row_local.loc['source_extraction_parameters'])
@@ -35,13 +35,6 @@ def run_component_evaluation(row, parameters, set_version = None, session_wise =
     data_dir = os.environ['DATA_DIR'] + 'data/interim/component_evaluation/session_wise/' if source_extraction_parameters['session_wise'] else os.environ['DATA_DIR'] + 'data/interim/component_evaluation/trial_wise/'
     file_name = db.create_file_name(step_index, index)
     output_file_path = data_dir + f'main/{file_name}.hdf5'
-    
-    if set_version == None:
-        # If the output version is not specified, determine it automatically.
-        version = index[4 + step_index] + 1
-    index = list(index)
-    index[4 + step_index] = version
-    index = tuple(index)    
 
     # Create a dictionary with parameters
     output = {
