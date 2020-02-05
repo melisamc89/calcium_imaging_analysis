@@ -31,7 +31,7 @@ from random import randint
 # cost_threshold: threshold for cost in matching with Hungarian matching algorithm.
 # max_dist : maximum distance between centroids to allow a matching.
 # max_cell_size and min_cell size should be taken from the distribution of typical sizes (use function typical size)
-parameters = { 'model_method': False, 'cost_threshold' : 0.9 , 'max_dist' : 15 , 'min_cell_size' : 12, 'max_cell_size' : 25}
+parameters = { 'model_method': False, 'cost_threshold' : 0.9 , 'max_dist' : 15 , 'min_cell_size' : 10, 'max_cell_size' : 25}
 
 
 '''
@@ -135,8 +135,11 @@ def run_registration(selected_rows,parameters):
         for j in range(size.shape[1]):
             if size[0, j] > min_size and size[0, j] < max_size:
                 accepted_size.append(j)
-        new_A_list.append(A_list[i][:, accepted_size])
-        new_C_list.append(C_list[i][accepted_size, :])
+        if len(accepted_size) > 0:
+            new_A_list.append(A_list[i][:, accepted_size])
+            new_C_list.append(C_list[i][accepted_size, :])
+        else:
+            evaluated_trials.remove(i)
     A_list = new_A_list
     C_list = new_C_list
 
@@ -144,13 +147,22 @@ def run_registration(selected_rows,parameters):
 
     with open(alignment_timeline_file, 'rb') as f:
         timeline = pickle.load(f)
-    total_time = timeline[len(timeline) - 1][1]
+    total_time = timeline[len(timeline) - 1][1] + C_list[len(C_list)-1].shape[1]
+    timeline.append(['End',total_time])
     C_matrix = np.zeros((spatial_union.shape[1], total_time))
 
+    new_assignments = np.zeros_like(assignments)
+    ##rename the assignments to the correct trial number
+    for cell in range(assignments.shape[0]):
+        for trial in range(len(evaluated_trials)):
+            positions =np.where(assignments[cell]==trial)[0]
+            new_assignments[cell][positions]= np.ones_like(positions) * evaluated_trials[trial]
+
     for i in range(spatial_union.shape[1]):
-        for j in range(assignments.shape[1]):
-            if math.isnan(assignments[i, j]) == False and j in evaluated_trials:
-                C_matrix[i][timeline[j][1]:timeline[j + 1][1]] = (C_list[j])[int(assignments[i, j]), :]
+        for j in range(1,new_assignments.shape[1]):
+            trial = evaluated_trials[j-1]
+            if new_assignments[i, j] != 0:
+                C_matrix[i][timeline[trial][1]:timeline[trial+1][1]] = (C_list[j])[int(new_assignments[i, j]-1), :]
 
 
     return C_matrix, spatial_union

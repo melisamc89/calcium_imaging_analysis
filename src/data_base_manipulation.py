@@ -24,18 +24,19 @@ import src.paths as paths
 import src.server as connect
 
 steps = [
-    'decoding',
-    'cropping',  # spatial borders that are unusable (due to microenscope border
-    # or blood clot) are removed
-    'motion_correction',  # individual trial movies (5 min) are rigidly or
-    # piecewise rigidly motion corrected
-    'alignment',  # Multiple videos (e.g. all trials of a session, 210 min) are
-    # rigid motion corrected to each other, resulting in a long aligned video
-    'source_extraction',  # neural activity is deconvolved from the videos
-    # trial-wise or session-wise
-    'component_evaluation'
-]
-
+        'decoding',
+        'cropping', # spatial borders that are unusable (due to microenscope border
+        # or blood clot) are removed
+        'motion_correction', # individual trial movies (5 min) are rigidly or
+        # piecewise rigidly motion corrected
+        'alignment', # Multiple videos (e.g. all trials of a session, 210 min) are
+        # rigid motion corrected to each other, resulting in a long aligned video
+        'equalization',
+        'source_extraction', # neural activity is deconvolved from the videos
+        # trial-wise or session-wise
+        'component_evaluation',
+        'registration'
+        ]
 
 def get_step_index(step):
     '''
@@ -336,7 +337,7 @@ def append_to_or_merge_with_states_df(states_df, inp):
 
 
 def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,
-           decoding_v=None, cropping_v=None, motion_correction_v=None, alignment_v=None, equalizing_v=None,
+           decoding_v=None, cropping_v=None, motion_correction_v=None, alignment_v=None, equalization_v=None,
            source_extraction_v=None, component_evaluation_v=None, registration_v=None, max_version=True):
     '''
     This function selects certain analysis states (specified by mouse, session, trial, is_rest,
@@ -379,7 +380,7 @@ def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,
 
     query_list_previous = []
     for step in steps[:step_index]:
-        if step != 'alignment':
+        if step != 'alignment' and step !='equalization':
             query_list_previous.append(f'{step}_v != 0')
     for step in steps[step_index:]:
         query_list_previous.append(f'{step}_v == 0')
@@ -390,7 +391,7 @@ def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,
 
     query_list_current = []
     for step in steps[:step_index + 1]:
-        if step != 'alignment':
+        if step != 'alignment' and step!='equalization':
             query_list_current.append(f'{step}_v != 0')
     for step in steps[step_index + 1:]:
         query_list_current.append(f'{step}_v == 0')
@@ -402,7 +403,7 @@ def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,
     selected_rows = append_to_or_merge_with_states_df(selected_rows_previous, selected_rows_current)
 
     # Select the specified analysis version
-    analysis_criteria_0 = [decoding_v, cropping_v, motion_correction_v, alignment_v, equalizing_v, source_extraction_v,
+    analysis_criteria_0 = [decoding_v, cropping_v, motion_correction_v, alignment_v, equalization_v, source_extraction_v,
                            component_evaluation_v, registration_v]
     analysis_criteria = {paths.analysis_structure[i]: analysis_criteria_0[i] for i in
                          range(0, len(paths.analysis_structure)) if analysis_criteria_0[i] != None}

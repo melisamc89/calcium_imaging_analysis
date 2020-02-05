@@ -36,8 +36,8 @@ mouse_number = 56165
 is_rest = None
 
 decoding_version = 1
-motion_correction = 200
-alignment_version = 0
+motion_correction = 100
+alignment_version = 1
 source_extraction_version = 1
 
 figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/'
