@@ -26,13 +26,35 @@ import src.data_base_manipulation as db
 import src.paths as paths
 from random import randint
 
-step_index = 6
 
 #Method posibilities (model method): registration (True) or matching (False)
 # cost_threshold: threshold for cost in matching with Hungarian matching algorithm.
 # max_dist : maximum distance between centroids to allow a matching.
-parameters = { 'model_method': False, 'cost_threshold' : 0.8 , 'max_dist' : 15}
+# max_cell_size and min_cell size should be taken from the distribution of typical sizes (use function typical size)
+parameters = { 'model_method': False, 'cost_threshold' : 0.9 , 'max_dist' : 15 , 'min_cell_size' : 12, 'max_cell_size' : 25}
 
+
+'''
+This is the main idea for typical size funcion
+
+    ## add a size restriction on the neurons that will further be processed. This restriction boundary
+    # decision is based in the histogram of typical neuronal sizes
+    min_size = np.mean(typical_size) - 2*np.std(typical_size)
+    max_size = np.mean(typical_size) + 2*np.std(typical_size)
+    new_A_list = []
+    new_C_list = []
+    for i in range(len(A_list)):
+        accepted_size = []
+        size = A_list[i].sum(axis=0)
+        for j in range(size.shape[1]):
+            if size[0, j] > min_size and size[0, j] < max_size:
+                accepted_size.append(j)
+        new_A_list.append(A_list[i][:, accepted_size])
+        new_C_list.append(C_list[i][accepted_size, :])
+    A_list = new_A_list
+    C_list = new_C_list
+
+'''
 
 def run_registration(selected_rows,parameters):
 
@@ -71,8 +93,9 @@ def run_registration(selected_rows,parameters):
     }
 
     first_row = df.iloc[0]
-    alignmnet_output = first_row['alignment_output']
-    alignment_timeline_file =
+    alignmnet_output = eval(first_row['alignment_output'])
+    alignment_timeline_file = alignmnet_output['meta']['timeline']
+
 
     A_list = []  ## list for contour matrix on multiple trials
     #A_size = []  ## list for the size of A (just to verify it is always the same size)
@@ -82,8 +105,8 @@ def run_registration(selected_rows,parameters):
     C_list = []  ## list with traces for each trial
     evaluated_trials = []
     typical_size = []
-    for i in range(len(selected_rows)):
-        row = selected_rows.iloc[i]
+    for i in range(len(df)):
+        row = df.iloc[i]
         component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']
         corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']
         cnm = load_CNMF(component_evaluation_hdf5_file_path)
@@ -102,8 +125,8 @@ def run_registration(selected_rows,parameters):
 
     ## add a size restriction on the neurons that will further be processed. This restriction boundary
     # decision is based in the histogram of typical neuronal sizes
-    min_size = np.mean(typical_size) - 2*np.std(typical_size)
-    max_size = np.mean(typical_size) + 2*np.std(typical_size)
+    min_size = parameters['min_cell_size']
+    max_size = parameters['max_cell_size']
     new_A_list = []
     new_C_list = []
     for i in range(len(A_list)):
@@ -116,10 +139,18 @@ def run_registration(selected_rows,parameters):
         new_C_list.append(C_list[i][accepted_size, :])
     A_list = new_A_list
     C_list = new_C_list
-    spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=0.9, max_dist=15)
+
+    spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=parameters['cost_threshold'], max_dist=parameters['max_dist'])
+
+    with open(alignment_timeline_file, 'rb') as f:
+        timeline = pickle.load(f)
+    total_time = timeline[len(timeline) - 1][1]
+    C_matrix = np.zeros((spatial_union.shape[1], total_time))
+
+    for i in range(spatial_union.shape[1]):
+        for j in range(assignments.shape[1]):
+            if math.isnan(assignments[i, j]) == False and j in evaluated_trials:
+                C_matrix[i][timeline[j][1]:timeline[j + 1][1]] = (C_list[j])[int(assignments[i, j]), :]
 
 
-
-
-
-    return df
+    return C_matrix, spatial_union

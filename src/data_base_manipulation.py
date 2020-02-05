@@ -151,6 +151,8 @@ def set_version_analysis(step, row, session_wise=False):
     step_index = get_step_index(step)
     index = row.name
     row_local = row.copy()
+    if step_index == 0:
+        index[4] = 1
     if step_index > 0:
 
         # Select the specified data
@@ -167,7 +169,7 @@ def set_version_analysis(step, row, session_wise=False):
             selected_rows = states_df
 
         # Select the specified analysis version
-        analysis_criteria_0 = [index[4], index[5], index[6], index[7], index[8], None]
+        analysis_criteria_0 = [index[4], index[5], index[6], index[7], index[8], index[9], index[10], None]
         for ii in range(step_index, len(analysis_criteria_0)):
             analysis_criteria_0[ii] = None
         analysis_criteria = {paths.analysis_structure[i]: analysis_criteria_0[i] for i in
@@ -195,7 +197,7 @@ def set_version_analysis(step, row, session_wise=False):
             if selected_rows.empty:
                 logging.warning(f'No rows were found for the specified parameters.')
         else:
-            if step_index == 4:
+            if step_index == 5:
                 for ii in steps[:step_index - 1]:
                     query_list_current.append(f'{ii}_v != 0')
                 query_list_current.append(f'{step}_v != 0')
@@ -209,17 +211,18 @@ def set_version_analysis(step, row, session_wise=False):
                 if selected_rows.empty:
                     logging.warning(f'No rows were found for the specified parameters.')
             else:
-                for ii in steps[:step_index - 2]:
-                    query_list_current.append(f'{ii}_v != 0')
-                for ii in steps[step_index - 1: step_index + 1]:
-                    query_list_current.append(f'{ii}_v != 0')
-                query = ' and '.join(query_list_current)
-                logging.debug(f'Selecting rows with a non-zero input analysis version. Query: \n {query}')
-                selected_rows = selected_rows.query(query)
-                logging.debug(f'{len(selected_rows)} rows found')
-                # If no trials were found.
-                if selected_rows.empty:
-                    logging.warning(f'No rows were found for the specified parameters.')
+                if step_index > 5:
+                    for ii in steps[:step_index - 2]:
+                        query_list_current.append(f'{ii}_v != 0')
+                    for ii in steps[step_index - 1: step_index + 1]:
+                        query_list_current.append(f'{ii}_v != 0')
+                    query = ' and '.join(query_list_current)
+                    logging.debug(f'Selecting rows with a non-zero input analysis version. Query: \n {query}')
+                    selected_rows = selected_rows.query(query)
+                    logging.debug(f'{len(selected_rows)} rows found')
+                    # If no trials were found.
+                    if selected_rows.empty:
+                        logging.warning(f'No rows were found for the specified parameters.')
 
         max_versions = len(selected_rows)
         verified_parameters = 0

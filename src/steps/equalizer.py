@@ -42,7 +42,6 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
     returns : None
     '''
 
-    step_index = 4
     # Sort the dataframe correctly
     df = selected_rows.sort_values(by=paths.multi_index_structure)
     # Determine the output path
@@ -88,7 +87,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         index = row_local.name
         new_index = db.replace_at_index1(index, 4 + 4, 2) ## version 2 is for session wise
         row_local.name = new_index
-        equalized_path = movie_equalized.save(output_tif_file_path + db.create_file_name(4,row_local.name) + '.mmap', order='C')
+        equalized_path = movie_equalized.save(output_tif_file_path + db.create_file_name(0,row_local.name) + '.mmap', order='C')
         output['main'] = equalized_path
         #auxiliar = eval(row_local.loc['alignment_output'])
         #auxiliar.update({'equalizing_output' : output})
@@ -150,14 +149,14 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
             movie_equalized = cm.movie(m_list_equalized[i])
             # Write necessary variables to the trial index and row_local
             index = row_local.name
-            new_index = db.replace_at_index1(index, 4 + 0, 1)  ## version 1 is for trial wise
+            new_index = db.replace_at_index1(index, 4 + 4, 1)  ## version 1 is for trial wise
             row_local.name = new_index
-            output['main'] = output_tif_file_path + db.create_file_name(4,row_local.name) + '.tif'
+            output['main'] = output_tif_file_path + db.create_file_name(0,row_local.name) + '.tif'
             #auxiliar = eval(row_local.loc['decoding_output'])
             #auxiliar.update({'equalizing_output' : output})
             #row_local.loc['decoding_output'] = str(auxiliar)
             row_local.loc['equalization_output'] = output
-            movie_equalized.save(output_tif_file_path + db.create_file_name(4,row_local.name) + '.tif')
+            movie_equalized.save(output_tif_file_path + db.create_file_name(0,row_local.name) + '.tif')
             states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
 
     db.save_analysis_states_database(states_df, paths.analysis_states_database_path, paths.backup_path)
