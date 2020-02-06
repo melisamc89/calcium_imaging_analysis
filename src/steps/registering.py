@@ -58,8 +58,12 @@ def run_registration(selected_rows,parameters):
     # Sort the dataframe correctly
     df = selected_rows.copy()
     df = df.sort_values(by=paths.multi_index_structure)
-    index = df.iloc[0].name
-    row_new = db.set_version_analysis('registration',df.iloc[0])
+    for i in range(len(df)):
+        index = df.iloc[i].name
+        row_new = db.set_version_analysis('registration',df.iloc[i].copy())
+        df = db.append_to_or_merge_with_states_df(df, row_new)
+    df = df.query('registration_v == ' + f'{row_new.name[4+step_index]}')
+    df = df.sort_values(by=paths.multi_index_structure)
 
     try:
         df.reset_index()[['session','trial', 'is_rest']].set_index(['session','trial', 'is_rest'], verify_integrity=True)

@@ -39,15 +39,11 @@ is_rest = None
 decoding_version = 1
 motion_correction = 100
 alignment_version = 1
+equalization_version = 0
 source_extraction_version = 1
-
-figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/'
-
-data_path = '/home/sebastian/Documents/Melisa/neural_analysis/data/calcium_traces_concatenation/'
-typical_size = []
 component_evaluation_version = 1
-session = 1
-cropping_version = 1
+
+
 
 for session in [1, 2, 4]:
     for cropping_version in [1,3,4,2]:
@@ -56,14 +52,36 @@ for session in [1, 2, 4]:
                                   cropping_v=cropping_version,
                                   motion_correction_v=motion_correction,
                                   alignment_v=alignment_version,
-                                  equalization_v=0,
+                                  equalization_v=equalization_version,
                                   source_extraction_v=source_extraction_version,
                                   component_evaluation_v= component_evaluation_version)
         parameters_registration = {'session_wise': False, 'model_method': False, 'cost_threshold': 0.9, 'max_dist': 15,
                       'min_cell_size': 10, 'max_cell_size': 25}
         new_selected_rows = main_registration(selected_rows, parameters_registration)
+        states_df = db.append_to_or_merge_with_states_df(states_df, new_selected_rows)
+        db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
 
 
+for cropping_version in [1,3,4,2]:
+    selected_rows = db.select(states_df, 'registration', mouse=mouse_number, is_rest=is_rest,
+                                  decoding_v=decoding_version,
+                                  cropping_v=cropping_version,
+                                  motion_correction_v=200,
+                                  alignment_v=alignment_version,
+                                  equalization_v=equalization_version,
+                                  source_extraction_v=source_extraction_version,
+                                  component_evaluation_v= component_evaluation_version)
+    parameters_registration = {'session_wise': True, 'model_method': False, 'cost_threshold': 0.9, 'max_dist': 15,
+                      'min_cell_size': 10, 'max_cell_size': 25}
+    new_selected_rows = main_registration(selected_rows, parameters_registration)
+    states_df = db.append_to_or_merge_with_states_df(states_df, new_selected_rows)
+    db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
+
+
+
+
+figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/'
+data_path = '/home/sebastian/Documents/Melisa/neural_analysis/data/calcium_traces_concatenation/'
 
 
 

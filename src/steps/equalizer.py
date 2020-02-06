@@ -101,7 +101,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         input_tif_file_list = []
         trial_index_list = []
         for idx, row in df.iterrows():
-            decoding_output = eval(row.loc['decoding_output'])
+            decoding_output = eval(row.loc['motion_correction_output'])
             decoding_output_list.append(decoding_output)
             input_tif_file_list.append(decoding_output['main'])
             trial_index_list.append(db.get_trial_name(idx[2], idx[3]))
@@ -117,7 +117,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         shape_list = []
         h_step = parameters['histogram_step']
         for i in range(len(input_tif_file_list)):
-            im = io.imread(input_tif_file_list[i]) #load video as 3d array
+            im = cm.load(input_tif_file_list[i]) #load video as 3d array
             m_list.append(im)                      # and adds all the videos to a list
             shape_list.append(im.shape)            # list of sizes to cut the videos in time for making all of them having the same length
             #legend.append('trial = ' + f'{df.iloc[i].name[2]}')

@@ -285,15 +285,15 @@ def save_analysis_states_database(states_df, path, backup_path):
     # Make a backup every day
     make_backup(path, backup_path)
 
-    if eval(os.environ['LOCAL']):
-        logging.info('Uploading analysis states database...')
-        ssh = connect.get_SSH_connection()
-        sftp = ssh.open_sftp()
-        sftp.put(os.environ['PROJECT_DIR_LOCAL'] + paths.analysis_states_database_path,
-                 os.environ['PROJECT_DIR_SERVER'] + paths.analysis_states_database_path)
-        sftp.close()
-        ssh.close()
-        logging.info('Uploaded analysis states database')
+    #if eval(os.environ['LOCAL']):
+    #    logging.info('Uploading analysis states database...')
+    #    ssh = connect.get_SSH_connection()
+    #    sftp = ssh.open_sftp()
+    #    sftp.put(os.environ['PROJECT_DIR_LOCAL'] + paths.analysis_states_database_path,
+    #             os.environ['PROJECT_DIR_SERVER'] + paths.analysis_states_database_path)
+    #    sftp.close()
+    #    ssh.close()
+    #   logging.info('Uploaded analysis states database')
     return
 
 
