@@ -11,6 +11,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+import pickle
 import math
 from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
@@ -83,6 +84,10 @@ for cropping_version in [1,3,4,2]:
 figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/'
 data_path = '/home/sebastian/Documents/Melisa/neural_analysis/data/calcium_traces_concatenation/'
 
+file_name = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/registration/session_wise/main/mouse_56165_session_4_trial_21_v1.1.200.1.0.1.1.1.pkl'
+cnm_result = pickle.load( open( file_name, "rb" ) )
+
+C_matrix = cnm_result.C
 
 
 figure, axes = plt.subplots(1)
@@ -96,7 +101,7 @@ axes.set_yticks([])
 #axes.vlines(timeline[1],0, 150000, color = 'k')
 axes.set_ylabel('activity')
 figure.set_size_inches([50., .5 * len(C_0)])
-figure.savefig('/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/mouse_56165_cropping_4.png')
+figure.savefig('/mnt/Data01/data/calcium_imaging_analysis/data/interim/registration/session_wise/meta/mouse_56165_cropping_1.png')
 
 
 
