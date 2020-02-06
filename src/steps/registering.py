@@ -25,42 +25,25 @@ from caiman.base.rois import register_multisession
 import src.data_base_manipulation as db
 import src.paths as paths
 from random import randint
-
+import copy
 
 #Method posibilities (model method): registration (True) or matching (False)
 # cost_threshold: threshold for cost in matching with Hungarian matching algorithm.
 # max_dist : maximum distance between centroids to allow a matching.
 # max_cell_size and min_cell size should be taken from the distribution of typical sizes (use function typical size)
-parameters = { 'model_method': False, 'cost_threshold' : 0.9 , 'max_dist' : 15 , 'min_cell_size' : 10, 'max_cell_size' : 25}
+#parameters = { 'session_wise': False,'model_method': False, 'cost_threshold' : 0.9 , 'max_dist' : 15 ,
+#               'min_cell_size' : 10, 'max_cell_size' : 25}
 
-
-'''
-This is the main idea for typical size funcion
-
-    ## add a size restriction on the neurons that will further be processed. This restriction boundary
-    # decision is based in the histogram of typical neuronal sizes
-    min_size = np.mean(typical_size) - 2*np.std(typical_size)
-    max_size = np.mean(typical_size) + 2*np.std(typical_size)
-    new_A_list = []
-    new_C_list = []
-    for i in range(len(A_list)):
-        accepted_size = []
-        size = A_list[i].sum(axis=0)
-        for j in range(size.shape[1]):
-            if size[0, j] > min_size and size[0, j] < max_size:
-                accepted_size.append(j)
-        new_A_list.append(A_list[i][:, accepted_size])
-        new_C_list.append(C_list[i][accepted_size, :])
-    A_list = new_A_list
-    C_list = new_C_list
-
-'''
+class estimates(object):
+    def __init__(self , A = None, C = None):
+        self.A = A
+        self.C = C
 
 def run_registration(selected_rows,parameters):
 
     '''
     This is the main registering function. Is is supposed to be run after trial wise component evaluation.
-    Regsitration takes over different contours of trial wise source extracted contours and do a matching between cells.
+    Registration takes over different contours of trial wise source extracted contours and do a matching between cells.
     It can use two different methods: Hungarian matching algorithm (RegisterMulti) (as implement in Giovannucci, et al.
     2019) or cell registration (CellReg)using centroids distance and spatial correlation (as implemented in Sheintuch, et al. 2017).
     Default method is registration with no modeling of distributions of centroids and spatial correlation.
@@ -70,18 +53,32 @@ def run_registration(selected_rows,parameters):
     :return: row: dictionary
     '''
 
+    ## define registration version
     step_index = 7
     # Sort the dataframe correctly
     df = selected_rows.copy()
     df = df.sort_values(by=paths.multi_index_structure)
+    index = df.iloc[0].name
+    row_new = db.set_version_analysis('registration',df.iloc[0])
+
     try:
         df.reset_index()[['session','trial', 'is_rest']].set_index(['session','trial', 'is_rest'], verify_integrity=True)
     except ValueError:
         logging.error('You passed multiple of the same trial in the dataframe df')
         return df
 
+
+    if parameters['session_wise'] == False:
+        data_dir = os.environ['DATA_DIR'] + 'data/interim/registration/trial_wise/main/'
+    else:
+        data_dir = os.environ['DATA_DIR'] + 'data/interim/registration/session_wise/main/'
+
+    file_name = db.create_file_name(step_index, row_new.name)
+    output_file_path =  data_dir + f'{file_name}.pkl'
+
     ##create the dictionary with metadata information
     output = {
+        'main': output_file_path,
         'meta': {
             'analysis': {
                 'analyst': os.environ['ANALYST'],
@@ -92,11 +89,14 @@ def run_registration(selected_rows,parameters):
         }
     }
 
+    ## take alignment data for the timeline of alingment
     first_row = df.iloc[0]
     alignmnet_output = eval(first_row['alignment_output'])
     alignment_timeline_file = alignmnet_output['meta']['timeline']
 
 
+    ## multiple list created to append the relevant information for the registration and creation of a unique time trace
+    ## matrix (cnm.estimates.A  and cnm.estimates.C ) both taken after component evaluation
     A_list = []  ## list for contour matrix on multiple trials
     #A_size = []  ## list for the size of A (just to verify it is always the same size)
     FOV_size = []  ## list for the cn filter dim (to verify it is always the same dims)
@@ -120,8 +120,11 @@ def run_registration(selected_rows,parameters):
         size = cnm.estimates.A[:, cnm.estimates.idx_components].sum(axis=0)
         for j in range(len(cnm.estimates.idx_components)):
             typical_size.append(size[0, j])
-        C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
-        evaluated_trials.append((selected_rows.iloc[i].name[2] - 1) * 2 + selected_rows.iloc[i].name[3] + 1) ## number that goes from 0 to 42
+        if cnm.estimates.bl is None:
+            C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
+        else:
+            C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :]-cnm.estimates.bl[cnm.estimates.idx_components,np.newaxis])
+        evaluated_trials.append((df.iloc[i].name[2] -1) * 2 + df.iloc[i].name[3]) ## number that goes from 0 to 42
 
     ## add a size restriction on the neurons that will further be processed. This restriction boundary
     # decision is based in the histogram of typical neuronal sizes
@@ -129,40 +132,69 @@ def run_registration(selected_rows,parameters):
     max_size = parameters['max_cell_size']
     new_A_list = []
     new_C_list = []
+    negative_trials = []
+    A_components = []
+    C_dims_new = []
+    new_evaluated_trials= []
     for i in range(len(A_list)):
         accepted_size = []
         size = A_list[i].sum(axis=0)
         for j in range(size.shape[1]):
-            if size[0, j] > min_size and size[0, j] < max_size:
+            if size[0, j] > 10 and size[0, j] < 25:
                 accepted_size.append(j)
-        if len(accepted_size) > 0:
+        if len(accepted_size) > 1:
             new_A_list.append(A_list[i][:, accepted_size])
             new_C_list.append(C_list[i][accepted_size, :])
-        else:
-            evaluated_trials.remove(i)
+            A_components.append(A_number_components[i])
+            C_dims_new.append(new_C_list[-1].shape)
+            new_evaluated_trials.append(evaluated_trials[i])
     A_list = new_A_list
     C_list = new_C_list
 
+    ## run CaImAn registration rutine that use the Hungarian matching algorithm in the contours list
     spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=parameters['cost_threshold'], max_dist=parameters['max_dist'])
 
+    ## open the timeline and create the new traces matrix C_matrix
     with open(alignment_timeline_file, 'rb') as f:
         timeline = pickle.load(f)
     total_time = timeline[len(timeline) - 1][1] + C_list[len(C_list)-1].shape[1]
     timeline.append(['End',total_time])
     C_matrix = np.zeros((spatial_union.shape[1], total_time))
 
-    new_assignments = np.zeros_like(assignments)
+    #new_assignments = np.zeros_like(assignments)
     ##rename the assignments to the correct trial number
-    for cell in range(assignments.shape[0]):
-        for trial in range(len(evaluated_trials)):
-            positions =np.where(assignments[cell]==trial)[0]
-            new_assignments[cell][positions]= np.ones_like(positions) * evaluated_trials[trial]
+    #for cell in range(assignments.shape[0]):
+    #    for trial in range(len(evaluated_trials)):
+    #        positions =np.where(assignments[cell]==trial)[0]
+    #        new_assignments[cell][positions]= np.ones_like(positions) * evaluated_trials[trial]
+
+    new_assignments = np.zeros((spatial_union.shape[1],len(timeline)))
+    for i in range(spatial_union.shape[1]):
+        for j in range(assignments.shape[1]):
+            trial = new_evaluated_trials[j]
+            if math.isnan(assignments[i, j]) == False:
+                new_assignments[i][trial] = assignments[i, j]+1
 
     for i in range(spatial_union.shape[1]):
-        for j in range(1,new_assignments.shape[1]):
-            trial = evaluated_trials[j-1]
-            if new_assignments[i, j] != 0:
-                C_matrix[i][timeline[trial][1]:timeline[trial+1][1]] = (C_list[j])[int(new_assignments[i, j]-1), :]
+        for j in range(assignments.shape[1]):
+            trial = new_evaluated_trials[j]
+            if math.isnan(assignments[i, j]) == False:
+                C_matrix[i][timeline[trial][1]:timeline[trial][1]+C_dims_new[j][1]] =  (C_list[j])[int(assignments[i, j]), :]
+                #C_matrix[i][timeline[trial][1]:timeline[trial+1][1]] = (C_list[j])[int(assignments[i, j]), :]
+
+    #for i in range(new_assignments.shape[0]):
+    #    for j in range(new_assignments.shape[1]):
+    #        if new_assignments[i,j] != 0 and j in evaluated_trials:
+    #            list_value = evaluated_trials.index(j)
+    #            C_matrix[i][timeline[j][1]:timeline[j+1][1]] = (C_list[list_value])[int(new_assignments[i, j]), :]
 
 
-    return C_matrix, spatial_union
+    cnm_registration = estimates(A = spatial_union,C = C_matrix)
+    with open(output_file_path, 'wb') as output_file:
+        pickle.dump(cnm_registration, output_file, pickle.HIGHEST_PROTOCOL)
+
+    for idx, row in df.iterrows():
+        df.loc[idx, 'registration_output'] = str(output)
+        df.loc[idx, 'registration_paramenters'] = str(parameters)
+
+    return df

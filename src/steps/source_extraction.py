@@ -150,7 +150,6 @@ def run_source_extraction(row, parameters, dview, session_wise = False):
     dt = int((datetime.datetime.today() - t0).seconds/60) # timedelta in minutes
     output['meta']['duration']['source_extraction'] = dt
     logging.info(f'{index} Source extraction finished. dt = {dt} min')
-    
     # Write necessary variables in row and return
     row_local.loc['source_extraction_parameters'] = str(parameters)
     row_local.loc['source_extraction_output'] = str(output)

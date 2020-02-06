@@ -23,7 +23,7 @@ steps = [
         ]
 
 # Paths 
-analysis_states_database_path = os.environ['PROJECT_DIR']  + 'references/analysis/analysis_states_database.xlsx'
+analysis_states_database_path = os.environ['PROJECT_DIR']  + 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
 backup_path = os.environ['PROJECT_DIR']  + 'references/analysis/backup/'
 parameters_path = os.environ['PROJECT_DIR']  + 'references/analysis/parameters_database.xlsx'
 

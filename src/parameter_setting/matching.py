@@ -1,8 +1,10 @@
-#%% Working with matching!!!!!! (IN DEVELOPMENT)
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: Melisa
+
+Created on Tue Jan 28 12.00.00 2020
+
 """
 
 import os
@@ -21,11 +23,10 @@ import src.configuration
 import caiman as cm
 from caiman.base.rois import com
 import src.data_base_manipulation as db
-import src.analysis_files_manipulation as fm
-import src.analysis.metrics as metrics
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.analysis.figures as figures
 from caiman.base.rois import register_multisession
+from src.steps.registering import run_registration as main_registration
 
 # Paths
 analysis_states_database_path = 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
@@ -45,87 +46,25 @@ figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_
 data_path = '/home/sebastian/Documents/Melisa/neural_analysis/data/calcium_traces_concatenation/'
 typical_size = []
 component_evaluation_version = 1
+session = 1
+cropping_version = 1
 
 for session in [1, 2, 4]:
-    A = []
-    C = []
-    registration = []
     for cropping_version in [1,3,4,2]:
-        A_list = []  ## list for contour matrix on multiple trials
-        A_size = []  ## list for the size of A (just to verify it is always the same size)
-        FOV_size = []  ## list for the cn filter dim (to verify it is always the same dims)
-        A_number_components = []  ## list with the total number of components extracted for each trial
-        C_dims = []  ## dimension of C, to keep track of timeline
-        C_list = []  ## list with traces for each trial
-        evaluated_trials = []
-        selected_rows = db.select(states_df, 'component_evaluation', mouse=mouse_number, session=session, is_rest=is_rest,
+        selected_rows = db.select(states_df, 'registration', mouse=mouse_number, session=session, is_rest=is_rest,
                                   decoding_v=decoding_version,
                                   cropping_v=cropping_version,
                                   motion_correction_v=motion_correction,
                                   alignment_v=alignment_version,
+                                  equalization_v=0,
                                   source_extraction_v=source_extraction_version,
                                   component_evaluation_v= component_evaluation_version)
+        parameters_registration = {'session_wise': False, 'model_method': False, 'cost_threshold': 0.9, 'max_dist': 15,
+                      'min_cell_size': 10, 'max_cell_size': 25}
+        new_selected_rows = main_registration(selected_rows, parameters_registration)
 
-        for i in range(len(selected_rows)):
-            row = selected_rows.iloc[i]
-            component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']
-            corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']
-            cnm = load_CNMF(component_evaluation_hdf5_file_path)
-            cn_filter = np.load(db.get_file(corr_path))
 
-            FOV_size.append(cn_filter.shape)
-            A_size.append(cnm.estimates.A.shape[0])
-            A_number_components.append(cnm.estimates.idx_components.shape[0])
-            A_list.append(cnm.estimates.A[:,cnm.estimates.idx_components])
-            C_dims.append(cnm.estimates.C.shape)
-            size = cnm.estimates.A[:,cnm.estimates.idx_components].sum(axis=0)
-            for j in range(len(cnm.estimates.idx_components)):
-                typical_size.append(size[0,j])
-            C_list.append(cnm.estimates.C[cnm.estimates.idx_components,:])
-            evaluated_trials.append((selected_rows.iloc[i].name[2]-1) *2 + selected_rows.iloc[i].name[3] +1)
 
-        ## add a size restriction on the neurons that will further be proceced. This restriction boudary
-        # decision is based in the histogram of typical neuronal sizes
-        new_A_list = []
-        new_C_list = []
-        for i in range(len(A_list)):
-            accepted_size=[]
-            size = A_list[i].sum(axis=0)
-            for j in range(size.shape[1]):
-                if size[0,j] > 15 and size[0,j] < 25:
-                    accepted_size.append(j)
-            new_A_list.append(A_list[i][:,accepted_size])
-            new_C_list.append(C_list[i][accepted_size,:])
-        A_list = new_A_list
-        C_list = new_C_list
-        spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=0.9, max_dist= 15)
-
-        A.append(spatial_union)
-        C.append(C_list)
-        registration.append(assignments)
-
-    time=0
-    timeline=[0]
-    for i in range(42):
-        time = time + C[0][i].shape[1]
-        timeline.append(timeline[i]+C[0][i].shape[1])
-
-    nneurons = 0
-    for i in range(len(C)):
-        nneurons = nneurons + A[i].shape[1]
-
-    C_matrix = np.zeros((nneurons,time))
-
-    nneurons = 0
-    for crop in range(len(C)):
-        for i in range(A[crop].shape[1]):
-            for j in range(registration[crop].shape[1]):
-                if math.isnan(registration[crop][i,j]) == False:
-                    if C_matrix[i+nneurons][timeline[j]:timeline[j+1]].shape == (C[crop][j])[int(registration[crop][i,j]),:].shape:
-                        C_matrix[i+nneurons][timeline[j]:timeline[j+1]] = (C[crop][j])[int(registration[crop][i,j]),:]
-        nneurons = nneurons + A[crop].shape[1]
-    #file_name = 'mouse_56165_session' + f'{session}'+'_cropping_v_'+f'{cropping_version}'+'.npy'
-    #np.save(data_path+file_name , C_matrix)
 
 
 figure, axes = plt.subplots(1)
@@ -136,10 +75,10 @@ for i in range(1, len(C_matrix)):
     axes.plot(C_0[i])
 axes.set_xlabel('t [frames]')
 axes.set_yticks([])
-axes.vlines(timeline,0, 150000, color = 'k')
+#axes.vlines(timeline[1],0, 150000, color = 'k')
 axes.set_ylabel('activity')
 figure.set_size_inches([50., .5 * len(C_0)])
-figure.savefig('/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/mouse_56165_session_1_3.png')
+figure.savefig('/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/mouse_56165_cropping_4.png')
 
 
 
