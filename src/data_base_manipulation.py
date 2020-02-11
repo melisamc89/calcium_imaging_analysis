@@ -153,7 +153,7 @@ def set_version_analysis(step, row, session_wise=False):
     index = row.name
     row_local = row.copy()
     if step_index == 0:
-        index[4] = 1
+        replace_at_index1(index, 4 , 1)
     if step_index > 0:
 
         # Select the specified data

@@ -7,6 +7,10 @@
 import os
 import psutil
 import numpy as np
+import sys
+# This should be in another file. Let's leave it here for now
+sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
+sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
 
 import src.configuration
 import caiman as cm
@@ -27,16 +31,16 @@ analysis_states_database_path = paths.analysis_states_database_path
 backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 56165
-sessions = [1,2,4]
+mouse_number = 56166
+sessions = [1,3,4]
 init_trial = 1
 end_trial = 22
 is_rest = None
 
 #  Select first data
-selected_rows = db.select(states_df, 'decoding', mouse=mouse_number, is_rest=is_rest, decoding_v= 1)
+selected_rows = db.select(states_df, 'decoding', mouse=mouse_number, is_rest=is_rest, decoding_v= 0)
 mouse_row = selected_rows.iloc[0]
-#mouse_row = main_decoding(mouse_row)
+mouse_row = main_decoding(mouse_row)
 plot_movie_frame(mouse_row)
 
 # select cropping parameters
