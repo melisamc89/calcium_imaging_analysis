@@ -155,13 +155,13 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
             #auxiliar = eval(row_local.loc['decoding_output'])
             #auxiliar.update({'equalizing_output' : output})
             #row_local.loc['decoding_output'] = str(auxiliar)
-            row_local.loc['equalization_output'] = output
+            row_local['equalization_output'] = output
             movie_equalized.save(output_tif_file_path + db.create_file_name(0,row_local.name) + '.tif')
             states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
 
     db.save_analysis_states_database(states_df, paths.analysis_states_database_path, paths.backup_path)
 
-    return
+    return states_df
 
 def do_equalization(reference):
 

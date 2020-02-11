@@ -81,10 +81,12 @@ for session in [1, 2, 4]:
         cnm_result = pickle.load( open(registration_output, "rb" ) )
         calcium_trace.append(cnm_result.C)
         calcium_trace_shape.append(cnm_result.C.shape)
+
     time = np.arange(0,(calcium_trace_shape[0])[1])/time_sf
     n_neurons = 0
     for i in range(len(cropping_number)):
         n_neurons = n_neurons + (calcium_trace_shape[i])[0]
+
     activity_matrix = np.zeros((n_neurons+1,len(time)))
     activity_matrix[0,:] = time
     init = 1
