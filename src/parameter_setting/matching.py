@@ -30,11 +30,11 @@ from caiman.base.rois import register_multisession
 from src.steps.registering import run_registration as main_registration
 
 # Paths
-analysis_states_database_path = 'references/analysis/calcium_imaging_data_base_trial_wise_analysis1.xlsx'
+analysis_states_database_path = 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
 backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 56165
+mouse_number = 32363
 is_rest = None
 
 decoding_version = 1
@@ -44,7 +44,7 @@ equalization_version = 0
 source_extraction_version = 1
 component_evaluation_version = 1
 
-for session in [1, 2, 4]:
+for session in [1,2]:
     for cropping_version in [1,3,4,2]:
         selected_rows = db.select(states_df, 'registration', mouse=mouse_number, session=session, is_rest=is_rest,
                                   decoding_v=decoding_version,
@@ -63,7 +63,7 @@ for session in [1, 2, 4]:
 concateneted_files_dir = os.environ['PROJECT_DIR'] + 'data/interim/reconstruction/trial_wise/'
 time_sf = 10
 cropping_number = [1,2,3,4]
-for session in [1, 2, 4]:
+for session in [3, 4]:
     calcium_trace = []
     calcium_trace_shape = []
     for cropping_version in cropping_number:
@@ -99,6 +99,10 @@ for session in [1, 2, 4]:
     output_file_name = db.create_file_name(7, row.name)
     np.save(concateneted_files_dir + output_file_name, activity_matrix)
 
+
+
+### This is for session wise registration
+
 for cropping_version in [1,3,4,2]:
     selected_rows = db.select(states_df, 'registration', mouse=mouse_number, is_rest=is_rest,
                                   decoding_v=decoding_version,
@@ -120,7 +124,7 @@ for cropping_version in [1,3,4,2]:
 figure_path = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/component_evaluation/trial_wise/meta/figures/'
 data_path = '/home/sebastian/Documents/Melisa/neural_analysis/data/calcium_traces_concatenation/'
 
-file_name = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/registration/session_wise/main/mouse_56165_session_4_trial_21_v1.1.200.1.0.1.1.1.pkl'
+file_name = '/mnt/Data01/data/calcium_imaging_analysis/data/interim/registration/session_wise/main/mouse_56165_session_1_trial_21_v1.1.100.1.1.1.1.1.pkl'
 cnm_result = pickle.load( open( file_name, "rb" ) )
 
 C_matrix = cnm_result.C

@@ -173,7 +173,7 @@ def do_equalization(reference):
     '''
     # flatten (turns an n-dim-array into 1-dim)
     # sorted pixel values
-    srcInd = np.arange(0, 2 ** 16, 2 ** 16 / len(reference.flatten()))
+    srcInd = np.arange(0, 2 ** 10, 2 ** 10 / len(reference.flatten()))
     srcInd = srcInd.astype(int)
     refInd = np.argsort(reference.flatten())
     #assign...

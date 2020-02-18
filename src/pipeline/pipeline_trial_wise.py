@@ -31,8 +31,8 @@ analysis_states_database_path = paths.analysis_states_database_path
 backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 56166
-sessions = [1,3,4]
+mouse_number = 32363
+sessions = [1,2]
 init_trial = 1
 end_trial = 22
 is_rest = None
