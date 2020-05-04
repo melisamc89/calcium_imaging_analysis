@@ -25,6 +25,7 @@ import src.configuration
 import caiman as cm
 import src.data_base_manipulation as db
 from src.steps.decoding import run_decoder as main_decoding
+from src.steps.decoding import fake_decoder
 from src.steps.cropping import run_cropper as main_cropping
 from src.steps.equalizer import  run_equalizer as main_equalizing
 from src.steps.cropping import cropping_interval
@@ -37,22 +38,27 @@ import src.analysis_files_manipulation as fm
 import src.analysis.metrics as metrics
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.analysis.figures as figures
+import src.paths as paths
 from caiman.base.rois import register_multisession
 from caiman.source_extraction.cnmf.initialization import downscale
 #from src.steps.equalizer import run_equalizer as main_equalizing
 
 
 # Paths
-analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
-backup_path = 'references/analysis/backup/'
+analysis_states_database_path = paths.analysis_states_database_path
+backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
+#parameters_path = 'references/analysis/parameters_database.xlsx'
 
-states_df = db.open_analysis_states_database()
+## Open thw data base with all data
+states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 56166
-session = 2
+mouse_number = 341776
+
+sessions = [1,2]
 init_trial = 1
-end_trial = 22
+end_trial = 25
 is_rest = None
+session = 4
 
 #%% Select first data
 selected_rows = db.select(states_df,'decoding',mouse = mouse_number,session=session, is_rest=is_rest)
@@ -67,16 +73,18 @@ parameters_cropping = cropping_interval() #check whether it is better to do it l
 
 
 #%% Run decoding for group of data tha have the same cropping parameters (same mouse)
+for session in sessions:
+    selected_rows = db.select(states_df,'decoding',mouse = mouse_number,session=session, is_rest=is_rest)
 
-for i in range(init_trial,end_trial):
-    selection = selected_rows.query('(trial ==' + f'{i}' + ')')
-    for j in range(len(selection)):
-        mouse_row = selection.iloc[j]
-        mouse_row = main_decoding(mouse_row)
-        states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
-        db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
+    for i in range(init_trial,end_trial):
+        selection = selected_rows.query('(trial ==' + f'{i}' + ')')
+        for j in range(len(selection)):
+            mouse_row = selection.iloc[j]
+            mouse_row = main_decoding(mouse_row)
+            states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
+            db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
 
-decoding_version = mouse_row.name[4]
+    decoding_version = mouse_row.name[4]
 #%% Run cropping for the already decoded group
 
 selected_rows = db.select(states_df,'cropping',mouse = mouse_number,session=session, is_rest=is_rest, decoding_v = decoding_version)

@@ -45,7 +45,7 @@ def run_registration(selected_rows,parameters):
     This is the main registering function. Is is supposed to be run after trial wise component evaluation.
     Registration takes over different contours of trial wise source extracted contours and do a matching between cells.
     It can use two different methods: Hungarian matching algorithm (RegisterMulti) (as implement in Giovannucci, et al.
-    2019) or cell registration (CellReg)using centroids distance and spatial correlation (as implemented in Sheintuch, et al. 2017).
+    2019) or cell registration (CellReg)using centroids distance and spatial correlation (as implemented in Sheintuch, et al. 2017).(Under constraction)
     Default method is registration with no modeling of distributions of centroids and spatial correlation.
 
     :param row: state of the data base containing all the trials that were aligned and source extracted.
@@ -57,13 +57,27 @@ def run_registration(selected_rows,parameters):
     step_index = 7
     # Sort the dataframe correctly
     df = selected_rows.copy()
-    df = df.sort_values(by=paths.multi_index_structure)
+    trials_order = []
+    for i in range(len(df)):
+        if df.iloc[i].name[3] == 0:
+            order = 2 * df.iloc[i].name[2]
+        else:
+            order = 2* df.iloc[i].name[2]-df.iloc[i].name[3]
+        trials_order.append(order)
+
+    trials = {'trials_order':trials_order}
+    parameters.update(trials)
+
+    for idx, row in df.iterrows():
+        df.loc[idx, 'registration_parameters'] = str(parameters)
+
+    #df = df.sort_values(by=paths.multi_index_structure)
     for i in range(len(df)):
         index = df.iloc[i].name
         row_new = db.set_version_analysis('registration',df.iloc[i].copy())
         df = db.append_to_or_merge_with_states_df(df, row_new)
     df = df.query('registration_v == ' + f'{row_new.name[4+step_index]}')
-    df = df.sort_values(by=paths.multi_index_structure)
+    #df = df.sort_values(by=paths.multi_index_structure)
 
     try:
         df.reset_index()[['session','trial', 'is_rest']].set_index(['session','trial', 'is_rest'], verify_integrity=True)
@@ -108,7 +122,6 @@ def run_registration(selected_rows,parameters):
     C_dims = []  ## dimension of C, to keep track of timeline
     C_list = []  ## list with traces for each trial
     evaluated_trials = []
-    evaluated_session  = []
     typical_size = []
     for i in range(len(df)):
         row = df.iloc[i]
@@ -129,8 +142,7 @@ def run_registration(selected_rows,parameters):
             C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
         else:
             C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :]-cnm.estimates.bl[cnm.estimates.idx_components,np.newaxis])
-        evaluated_trials.append( (df.iloc[i].name[2] -1) * 2 + df.iloc[i].name[3]) ## number that goes from 0 to 42
-        evaluated_session.append(df.iloc[i].name[1])
+        evaluated_trials.append((df.iloc[i].name[2] -1) * 2 + df.iloc[i].name[3]) ## number that goes from 0 to 42
 
     ## add a size restriction on the neurons that will further be processed. This restriction boundary
     # decision is based in the histogram of typical neuronal sizes
@@ -138,10 +150,10 @@ def run_registration(selected_rows,parameters):
     max_size = parameters['max_cell_size']
     new_A_list = []
     new_C_list = []
+    negative_trials = []
     A_components = []
     C_dims_new = []
     new_evaluated_trials= []
-    new_evaluated_session = []
     for i in range(len(A_list)):
         accepted_size = []
         size = A_list[i].sum(axis=0)
@@ -154,7 +166,6 @@ def run_registration(selected_rows,parameters):
             A_components.append(A_number_components[i])
             C_dims_new.append(new_C_list[-1].shape)
             new_evaluated_trials.append(evaluated_trials[i])
-            new_evaluated_session.append(evaluated_session[i])
     A_list = new_A_list
     C_list = new_C_list
 
@@ -182,22 +193,9 @@ def run_registration(selected_rows,parameters):
             if math.isnan(assignments[i, j]) == False:
                 new_assignments[i][trial] = assignments[i, j]+1
 
-    unique_session = []
-    for x in evaluated_session:
-        if x not in unique_session:
-            unique_session.append(x)
-    session_vector = np.arange(0,len(unique_session))
-    final_evaluated_session = []
-    for i in range(assignments.shape[1]):
-        for j in range(len(unique_session)):
-            if new_evaluated_session[i] == unique_session[j]:
-                final_evaluated_session.append(session_vector[j])
-
-
     for i in range(spatial_union.shape[1]):
         for j in range(assignments.shape[1]):
-            trial = (final_evaluated_session[j]+1) * new_evaluated_trials[j]
-            print(trial)
+            trial = new_evaluated_trials[j]
             if math.isnan(assignments[i, j]) == False:
                 C_matrix[i][timeline[trial][1]:timeline[trial][1]+C_dims_new[j][1]] =  (C_list[j])[int(assignments[i, j]), :]
                 #C_matrix[i][timeline[trial][1]:timeline[trial+1][1]] = (C_list[j])[int(assignments[i, j]), :]
@@ -215,6 +213,5 @@ def run_registration(selected_rows,parameters):
 
     for idx, row in df.iterrows():
         df.loc[idx, 'registration_output'] = str(output)
-        df.loc[idx, 'registration_parameters'] = str(parameters)
 
     return df

@@ -28,13 +28,14 @@ from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.analysis.figures as figures
 from caiman.base.rois import register_multisession
 from src.steps.registering import run_registration as main_registration
+import src.paths as paths
 
 # Paths
-analysis_states_database_path = 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
+analysis_states_database_path = paths.analysis_states_database_path
 backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 32363
+mouse_number = 32364
 is_rest = None
 
 decoding_version = 1
@@ -60,7 +61,7 @@ for session in [1,2]:
         states_df = db.append_to_or_merge_with_states_df(states_df, new_selected_rows)
         db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
 
-concateneted_files_dir = os.environ['PROJECT_DIR'] + 'data/interim/reconstruction/trial_wise/'
+concateneted_files_dir = os.environ['DATA_DIR'] + 'data/interim/reconstruction/trial_wise/'
 time_sf = 10
 cropping_number = [1,2,3,4]
 for session in [3, 4]:
@@ -100,8 +101,7 @@ for session in [3, 4]:
     np.save(concateneted_files_dir + output_file_name, activity_matrix)
 
 
-
-### This is for session wise registration
+#%% This is for session wise registration
 
 for cropping_version in [1,3,4,2]:
     selected_rows = db.select(states_df, 'registration', mouse=mouse_number, is_rest=is_rest,

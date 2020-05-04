@@ -31,8 +31,8 @@ analysis_states_database_path = paths.analysis_states_database_path
 backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 32363
-sessions = [1,2]
+mouse_number = 32366
+sessions = [1,3]
 init_trial = 1
 end_trial = 22
 is_rest = None
@@ -110,7 +110,7 @@ c, dview, n_processes = cm.cluster.setup_cluster(backend='local',
                                                  single_thread=False)
 
 
-for session in [1,2,4]:
+for session in sessions:
     print(session)
     # Run decoding for group of data tha have the same cropping parameters (same mouse)
     selection = selected_rows.query('(session ==' + f'{session}' + ')')

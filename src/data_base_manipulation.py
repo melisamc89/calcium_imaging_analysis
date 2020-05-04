@@ -18,6 +18,7 @@ import collections
 import math
 import datetime
 import shutil
+import random
 import numpy as np
 
 import src.paths as paths
@@ -199,7 +200,7 @@ def set_version_analysis(step, row, session_wise=False):
                 logging.warning(f'No rows were found for the specified parameters.')
         else:
             if step_index == 5:
-                for ii in steps[:step_index - 1]:
+                for ii in steps[:step_index - 2]:
                     query_list_current.append(f'{ii}_v != 0')
                 query_list_current.append(f'{step}_v != 0')
                 for ii in steps[step_index + 1:]:
@@ -212,7 +213,7 @@ def set_version_analysis(step, row, session_wise=False):
                 if selected_rows.empty:
                     logging.warning(f'No rows were found for the specified parameters.')
             else:
-                if step_index > 5:
+                if step_index == 6:
                     for ii in steps[:step_index - 2]:
                         query_list_current.append(f'{ii}_v != 0')
                     for ii in steps[step_index - 1: step_index + 1]:
@@ -224,6 +225,20 @@ def set_version_analysis(step, row, session_wise=False):
                     # If no trials were found.
                     if selected_rows.empty:
                         logging.warning(f'No rows were found for the specified parameters.')
+                else:
+                    if step_index == 7:
+                        for ii in steps[:step_index - 3]:
+                            query_list_current.append(f'{ii}_v != 0')
+                        for ii in steps[step_index - 2: step_index + 1]:
+                            query_list_current.append(f'{ii}_v != 0')
+                        query = ' and '.join(query_list_current)
+                        logging.debug(f'Selecting rows with a non-zero input analysis version. Query: \n {query}')
+                        selected_rows = selected_rows.query(query)
+                        logging.debug(f'{len(selected_rows)} rows found')
+                        # If no trials were found.
+                        if selected_rows.empty:
+                            logging.warning(f'No rows were found for the specified parameters.')
+
 
         max_versions = len(selected_rows)
         verified_parameters = 0
@@ -231,7 +246,7 @@ def set_version_analysis(step, row, session_wise=False):
             version = selected_rows.iloc[ii]
             a, b, c, d = dict_compare(eval(version[f'{step}' + '_parameters']),
                                       eval(row_local[f'{step}' + '_parameters']))
-            if bool(c):
+            if bool(c) or b:
                 verified_parameters = verified_parameters + 1
             else:
                 new_index = version.name
@@ -242,6 +257,9 @@ def set_version_analysis(step, row, session_wise=False):
 
     row_local.name = new_index
     return row_local
+
+
+
 
 
 def get_expected_file_path(step, subdirectory, index, extension):
@@ -334,6 +352,7 @@ def append_to_or_merge_with_states_df(states_df, inp):
             states_df = states_df.append(inp)
 
     return states_df
+
 
 
 def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,

@@ -22,11 +22,12 @@ steps = [
         'registration'
         ]
 
-# Paths 
-analysis_states_database_path = os.environ['PROJECT_DIR']  + 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
-backup_path = os.environ['PROJECT_DIR']  + 'references/analysis/backup/'
-parameters_path = os.environ['PROJECT_DIR']  + 'references/analysis/parameters_database.xlsx'
-
+#for running the pipeline
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
+##for parameters selection
+#analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/data_base_templete_control3.xlsx'
+#for alejandra alonsos data
+#analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_alonso2.xlsx'
 # Multi Index Structure
 data_structure = ['mouse', 'session', 'trial', 'is_rest']
 analysis_structure = [f'{step}_v' for step in steps]

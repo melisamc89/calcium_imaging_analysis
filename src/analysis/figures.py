@@ -694,10 +694,11 @@ def plot_multiple_contours(rows, version = None , corr_array = None, pnr_array =
                 axes[ii, jj].set_title('min_corr = ' + f'{round(corr_array[ii],2)}')
                 axes[ii, jj].set_ylabel('min_pnr = ' + f'{round(pnr_array[jj],2)}')
 
-    fig_dir = 'data/interim/source_extraction/trial_wise/meta/figures/contours/'
+    #fig.set_size_inches([10., .3 * len(C)])
+    fig_dir = os.environ['DATA_DIR'] + 'data/interim/source_extraction/trial_wise/meta/figures/contours/'
     if session_wise:
-        fig_dir = 'data/interim/source_extraction/session_wise/meta/figures/contours/'
-    fig_name = fig_dir + db.create_file_name(3, new_row.name)+'_corr_min' + f'{round(corr_array[0],1)}'+ '_pnr_min'+f'{round(pnr_array[0],1)}' + '_.png'
+        fig_dir = os.environ['DATA_DIR'] + 'data/interim/source_extraction/session_wise/meta/figures/contours/'
+    fig_name = fig_dir + db.create_file_name(5, new_row.name)+'_corr_min' + f'{round(corr_array[0],1)}'+ '_pnr_min'+f'{round(pnr_array[0],1)}' + '_.png'
     figure.savefig(fig_name)
 
     return figure

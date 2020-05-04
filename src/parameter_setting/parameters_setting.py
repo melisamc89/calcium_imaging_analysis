@@ -36,17 +36,15 @@ from caiman.source_extraction.cnmf.cnmf import load_CNMF
 
 
 # Paths
-analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/analysis_states_database.xlsx'
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/data_base_templete_control3.xlsx'
 backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
-#parameters_path = 'references/analysis/parameters_database.xlsx'
+states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-## Open thw data base with all data
-states_df = db.open_analysis_states_database()
 
 #%% DECODING
 # Select all the data corresponding to a particular mouse. Ex: 56165.
 
-selected_rows = db.select(states_df,'decoding',56165)
+selected_rows = db.select(states_df,'decoding',32364)
 mouse_row = selected_rows.iloc[0]
 mouse_row = main_decoding(mouse_row)
 states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
