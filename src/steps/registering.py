@@ -23,9 +23,7 @@ from caiman.source_extraction.cnmf.cnmf import load_CNMF
 from caiman.base.rois import register_multisession
 
 import src.data_base_manipulation as db
-import src.paths as paths
-from random import randint
-import copy
+import src.steps.normalized_traces as normalization
 
 #Method posibilities (model method): registration (True) or matching (False)
 # cost_threshold: threshold for cost in matching with Hungarian matching algorithm.
@@ -130,19 +128,33 @@ def run_registration(selected_rows,parameters):
         cnm = load_CNMF(component_evaluation_hdf5_file_path)
         cn_filter = np.load(db.get_file(corr_path))
 
-        FOV_size.append(cn_filter.shape)
-        #A_size.append(cnm.estimates.A.shape[0])
         A_number_components.append(cnm.estimates.idx_components.shape[0])
         A_list.append(cnm.estimates.A[:, cnm.estimates.idx_components])
         C_dims.append(cnm.estimates.C.shape)
         size = cnm.estimates.A[:, cnm.estimates.idx_components].sum(axis=0)
+        evaluated_trials.append((df.iloc[i].name[2] - 1) * 2 + df.iloc[i].name[3])  ## number that goes from 0 to 42
         for j in range(len(cnm.estimates.idx_components)):
             typical_size.append(size[0, j])
-        if cnm.estimates.bl is None:
-            C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
+
+        if parameters['normalization'] == True:
+            if cnm.estimates.bl is None:
+                raw_normed, cnm_normed, res_normed, s_normed, noise_levels =  normalization.normalize_traces(cnm.estimates.C,
+                                                                                                             cnm.estimates.YrA,
+                                                                                                             cnm.estimates.S,
+                                                                                                             1,
+                                                                                                             offset_method="denoised_floor")
+            else:
+                raw_normed, cnm_normed, res_normed, s_normed, noise_levels =  normalization.normalize_traces(cnm.estimates.C - cnm.estimates.bl[:,np.newaxis],
+                                                                                                             cnm.estimates.YrA,
+                                                                                                             cnm.estimates.S,
+                                                                                                             1,
+                                                                                                             offset_method="denoised_floor")
+            C_list.append(cnm_normed[cnm.estimates.idx_components, :])
         else:
-            C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :]-cnm.estimates.bl[cnm.estimates.idx_components,np.newaxis])
-        evaluated_trials.append((df.iloc[i].name[2] -1) * 2 + df.iloc[i].name[3]) ## number that goes from 0 to 42
+            if cnm.estimates.bl is None:
+                C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
+            else:
+                C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :]-cnm.estimates.bl[cnm.estimates.idx_components,np.newaxis])
 
     ## add a size restriction on the neurons that will further be processed. This restriction boundary
     # decision is based in the histogram of typical neuronal sizes

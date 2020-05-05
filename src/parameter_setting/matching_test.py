@@ -14,10 +14,6 @@ import math
 from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
 
-# This should be in another file. Let's leave it here for now
-sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
-sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
-
 import src.configuration
 import src.paths as paths
 import caiman as cm
@@ -27,6 +23,7 @@ from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.analysis.figures as figures
 from caiman.base.rois import register_multisession
 from src.steps.registering import run_registration as main_registration
+import src.steps.normalized_traces as normalization
 
 # Paths
 analysis_states_database_path = paths.analysis_states_database_path
@@ -34,6 +31,7 @@ backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
 mouse_number = 32364
+sessions = [1,2,3]
 is_rest = None
 
 decoding_version = 1
@@ -42,9 +40,11 @@ alignment_version = 1
 equalization_version = 0
 source_extraction_version = 1
 component_evaluation_version = 1
+cropping_number = [1,2,3,4]
 
-for session in [1,2,3]:
-    for cropping_version in [1,2,3,4]:
+
+for session in sessions:
+    for cropping_version in cropping_number:
         selected_rows = db.select(states_df, 'registration', mouse=mouse_number, session=session, is_rest=is_rest,
                                   decoding_v=decoding_version,
                                   cropping_v=cropping_version,
@@ -54,8 +54,11 @@ for session in [1,2,3]:
                                   source_extraction_v=source_extraction_version,
                                   component_evaluation_v= component_evaluation_version)
         parameters_registration = {'session_wise': False, 'model_method': False, 'cost_threshold': 0.9, 'max_dist': 15,
-                      'min_cell_size': 10, 'max_cell_size': 25, 'scramble': 1}
-        shuffle_selected_rows = selected_rows.sample(frac = 1)
+                      'min_cell_size': 10, 'max_cell_size': 25, 'scramble': False, 'normalization': True}
+        if parameters_registration['scramble']:
+            shuffle_selected_rows = selected_rows.sample(frac = 1)
+        else:
+            shuffle_selected_rows = selected_rows.copy()
         new_selected_rows = main_registration(shuffle_selected_rows, parameters_registration)
         states_df = db.append_to_or_merge_with_states_df(states_df, new_selected_rows)
         db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
@@ -63,8 +66,8 @@ for session in [1,2,3]:
 
 concateneted_files_dir = os.environ['DATA_DIR'] + 'data/interim/reconstruction/trial_wise/'
 time_sf = 10
-cropping_number = [1,2,3,4]
-for session in [1,2,3]:
+registration_version = 2
+for session in sessions:
     calcium_trace = []
     calcium_trace_shape = []
     for cropping_version in cropping_number:
@@ -76,7 +79,7 @@ for session in [1,2,3]:
                                   equalization_v=equalization_version,
                                   source_extraction_v=source_extraction_version,
                                   component_evaluation_v= component_evaluation_version,
-                                  registration_v= 3)
+                                  registration_v= registration_version)
 
         row = selected_rows.iloc[0]
         registration_output = eval(row['registration_output'])['main']
