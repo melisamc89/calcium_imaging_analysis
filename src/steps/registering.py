@@ -58,9 +58,9 @@ def run_registration(selected_rows,parameters):
     trials_order = []
     for i in range(len(df)):
         if df.iloc[i].name[3] == 0:
-            order = 2 * df.iloc[i].name[2]
+            order = 2 * df.iloc[i].name[2] - 1
         else:
-            order = 2* df.iloc[i].name[2]-df.iloc[i].name[3]
+            order = 2* df.iloc[i].name[2]
         trials_order.append(order)
 
     trials = {'trials_order':trials_order}
@@ -89,6 +89,9 @@ def run_registration(selected_rows,parameters):
     else:
         data_dir = os.environ['DATA_DIR'] + 'data/interim/registration/session_wise/main/'
 
+    lst = list(row_new.name)
+    lst[2] = 1
+    row_new.name = tuple(lst)
     file_name = db.create_file_name(step_index, row_new.name)
     output_file_path =  data_dir + f'{file_name}.pkl'
 
@@ -123,38 +126,51 @@ def run_registration(selected_rows,parameters):
     typical_size = []
     for i in range(len(df)):
         row = df.iloc[i]
-        component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']
-        corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']
-        cnm = load_CNMF(component_evaluation_hdf5_file_path)
-        cn_filter = np.load(db.get_file(corr_path))
+        if type(row['component_evaluation_output'] ) == str:
+            component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']
+            corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']
+            cnm = load_CNMF(component_evaluation_hdf5_file_path)
+            cn_filter = np.load(db.get_file(corr_path))
+            FOV_size.append(cn_filter.shape)
 
-        A_number_components.append(cnm.estimates.idx_components.shape[0])
-        A_list.append(cnm.estimates.A[:, cnm.estimates.idx_components])
-        C_dims.append(cnm.estimates.C.shape)
-        size = cnm.estimates.A[:, cnm.estimates.idx_components].sum(axis=0)
-        evaluated_trials.append((df.iloc[i].name[2] - 1) * 2 + df.iloc[i].name[3])  ## number that goes from 0 to 42
-        for j in range(len(cnm.estimates.idx_components)):
-            typical_size.append(size[0, j])
+            A_number_components.append(cnm.estimates.idx_components.shape[0])
+            A_list.append(cnm.estimates.A[:, cnm.estimates.idx_components])
+            C_dims.append(cnm.estimates.C.shape)
+            size = cnm.estimates.A[:, cnm.estimates.idx_components].sum(axis=0)
+            evaluated_trials.append((df.iloc[i].name[2] - 1) * 2 + df.iloc[i].name[3])  ## number that goes from 0 to 42
+            for j in range(len(cnm.estimates.idx_components)):
+                typical_size.append(size[0, j])
+            if parameters['normalization'] == True:
+                if cnm.estimates.bl is None:
+                    raw_normed, cnm_normed, res_normed, s_normed, noise_levels =  normalization.normalize_traces(cnm.estimates.C,
+                                                                                                                 cnm.estimates.YrA,
+                                                                                                                 cnm.estimates.S,
+                                                                                                                 1,
+                                                                                                                 offset_method="denoised_floor")
+                else:
+                    raw_normed, cnm_normed, res_normed, s_normed, noise_levels =  normalization.normalize_traces(cnm.estimates.C - cnm.estimates.bl[:,np.newaxis],
+                                                                                                                 cnm.estimates.YrA,
+                                                                                                                 cnm.estimates.S,
+                                                                                                                 1,
+                                                                                                                 offset_method="denoised_floor")
+                C_list.append(cnm_normed[cnm.estimates.idx_components, :])
+            else:
+                if cnm.estimates.bl is None:
+                    C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
+                else:
+                    C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :]-cnm.estimates.bl[cnm.estimates.idx_components,np.newaxis])
 
-        if parameters['normalization'] == True:
-            if cnm.estimates.bl is None:
-                raw_normed, cnm_normed, res_normed, s_normed, noise_levels =  normalization.normalize_traces(cnm.estimates.C,
-                                                                                                             cnm.estimates.YrA,
-                                                                                                             cnm.estimates.S,
-                                                                                                             1,
-                                                                                                             offset_method="denoised_floor")
-            else:
-                raw_normed, cnm_normed, res_normed, s_normed, noise_levels =  normalization.normalize_traces(cnm.estimates.C - cnm.estimates.bl[:,np.newaxis],
-                                                                                                             cnm.estimates.YrA,
-                                                                                                             cnm.estimates.S,
-                                                                                                             1,
-                                                                                                             offset_method="denoised_floor")
-            C_list.append(cnm_normed[cnm.estimates.idx_components, :])
-        else:
-            if cnm.estimates.bl is None:
-                C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :])
-            else:
-                C_list.append(cnm.estimates.C[cnm.estimates.idx_components, :]-cnm.estimates.bl[cnm.estimates.idx_components,np.newaxis])
+
+    ## open the timeline and create the new traces matrix C_matrix
+    with open(alignment_timeline_file, 'rb') as f:
+        timeline = pickle.load(f)
+    total_time1 = 0
+    for i in range(len(C_list)-1):
+        total_time1= total_time1 + C_list[i].shape[1]
+    total_time2 = timeline[len(timeline)-1][1] + C_list[np.argmax(evaluated_trials)].shape[1]
+    total_time = max(total_time1, total_time2)
+    timeline.append(['End',total_time])
+
 
     ## add a size restriction on the neurons that will further be processed. This restriction boundary
     # decision is based in the histogram of typical neuronal sizes
@@ -184,11 +200,6 @@ def run_registration(selected_rows,parameters):
     ## run CaImAn registration rutine that use the Hungarian matching algorithm in the contours list
     spatial_union, assignments, match = register_multisession(A=A_list, dims=FOV_size[0], thresh_cost=parameters['cost_threshold'], max_dist=parameters['max_dist'])
 
-    ## open the timeline and create the new traces matrix C_matrix
-    with open(alignment_timeline_file, 'rb') as f:
-        timeline = pickle.load(f)
-    total_time = timeline[len(timeline) - 1][1] + C_list[len(C_list)-1].shape[1]
-    timeline.append(['End',total_time])
     C_matrix = np.zeros((spatial_union.shape[1], total_time))
 
     #new_assignments = np.zeros_like(assignments)
@@ -209,7 +220,7 @@ def run_registration(selected_rows,parameters):
         for j in range(assignments.shape[1]):
             trial = new_evaluated_trials[j]
             if math.isnan(assignments[i, j]) == False:
-                C_matrix[i][timeline[trial][1]:timeline[trial][1]+C_dims_new[j][1]] =  (C_list[j])[int(assignments[i, j]), :]
+                C_matrix[i][timeline[trial][1]:timeline[trial][1]+(C_list[j])[int(assignments[i, j]), :].shape[0]] =  (C_list[j])[int(assignments[i, j]), :]
                 #C_matrix[i][timeline[trial][1]:timeline[trial+1][1]] = (C_list[j])[int(assignments[i, j]), :]
 
     #for i in range(new_assignments.shape[0]):

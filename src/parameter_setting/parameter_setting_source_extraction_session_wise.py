@@ -52,13 +52,13 @@ backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 ## Open thw data base with all data
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 341776
+mouse_number = 32364
 
 sessions = [1,2]
 init_trial = 1
 end_trial = 25
 is_rest = None
-session = 4
+session = 1
 
 #%% Select first data
 selected_rows = db.select(states_df,'decoding',mouse = mouse_number,session=session, is_rest=is_rest)

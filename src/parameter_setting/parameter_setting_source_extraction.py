@@ -40,13 +40,13 @@ backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
 
-mouse_number = 341776
+mouse_number = 56165
 
 sessions = [1,2]
 init_trial = 1
 end_trial = 25
 is_rest = None
-session = 5
+session = 1
 
 
 #define previus steps analysis versions that are desired to explore in source extraction

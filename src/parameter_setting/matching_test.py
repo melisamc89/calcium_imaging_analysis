@@ -30,8 +30,8 @@ analysis_states_database_path = paths.analysis_states_database_path
 backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 32364
-sessions = [1,2,3]
+mouse_number = 56165
+sessions = [1,2,4]
 is_rest = None
 
 decoding_version = 1
@@ -41,7 +41,6 @@ equalization_version = 0
 source_extraction_version = 1
 component_evaluation_version = 1
 cropping_number = [1,2,3,4]
-
 
 for session in sessions:
     for cropping_version in cropping_number:
@@ -54,7 +53,7 @@ for session in sessions:
                                   source_extraction_v=source_extraction_version,
                                   component_evaluation_v= component_evaluation_version)
         parameters_registration = {'session_wise': False, 'model_method': False, 'cost_threshold': 0.9, 'max_dist': 15,
-                      'min_cell_size': 10, 'max_cell_size': 25, 'scramble': False, 'normalization': True}
+                      'min_cell_size': 10, 'max_cell_size': 25, 'scramble': True, 'normalization': True}
         if parameters_registration['scramble']:
             shuffle_selected_rows = selected_rows.sample(frac = 1)
         else:
@@ -87,18 +86,19 @@ for session in sessions:
         timeline_file = eval(row['alignment_output'])['meta']['timeline']
         timeline_data = pickle.load(open(timeline_file, "rb"))
         cnm_result = pickle.load( open(registration_output, "rb" ))
-        reorder_cnm_result = np.zeros_like(cnm_result.C)
+        #reorder_cnm_result = np.zeros_like(cnm_result.C)
 
-        timeline = []
-        for i in range(len(timeline_data)):
-            timeline.append(timeline_data[i][1])
-        timeline.append(cnm_result.C.shape[1])
-        time_length = np.diff(timeline)
-        for i in range(len(registration_time_order)):
-            auxiliar = cnm_result.C[:, timeline[i]: timeline[i] +time_length[registration_time_order[i]-1]]
-            reorder_cnm_result[:,timeline[registration_time_order[i]-1]:timeline[registration_time_order[i]-1]+auxiliar.shape[1]] = auxiliar
+        #timeline = []
+        #for i in range(len(timeline_data)):
+        #    timeline.append(timeline_data[i][1])
+        #timeline.append(cnm_result.C.shape[1])
+        #time_length = np.diff(timeline)
+        #for i in range(len(registration_time_order)):
+        #    auxiliar = cnm_result.C[:, timeline[i]: timeline[i] +time_length[registration_time_order[i]-1]]
+        #    reorder_cnm_result[:,timeline[registration_time_order[i]-1]:timeline[registration_time_order[i]-1]+auxiliar.shape[1]] = auxiliar
 
-        calcium_trace.append(reorder_cnm_result)
+        #calcium_trace.append(reorder_cnm_result)
+        calcium_trace.append(cnm_result.C)
         calcium_trace_shape.append(cnm_result.C.shape)
 
     time = np.arange(0,(calcium_trace_shape[0])[1])/time_sf
