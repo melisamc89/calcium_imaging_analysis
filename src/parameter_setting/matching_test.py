@@ -30,8 +30,8 @@ analysis_states_database_path = paths.analysis_states_database_path
 backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 56165
-sessions = [1,2,4]
+mouse_number = 32365
+sessions = [2,3]
 is_rest = None
 
 decoding_version = 1
@@ -122,5 +122,4 @@ for session in sessions:
     activity_matrix[init:finish,:] = calcium_trace[len(cropping_number)-1][:,:min_time]
     output_file_name = db.create_file_name(7, row.name)
     np.save(concateneted_files_dir + output_file_name, activity_matrix)
-
 
