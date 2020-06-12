@@ -19,6 +19,7 @@ import pickle
 import math
 
 import caiman as cm
+import cv2
 from caiman.base.rois import com
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.data_base_manipulation as db
@@ -41,11 +42,11 @@ def run_model_reconstruction(selected_rows, parameters):
     gSig_filt = parameters['gSig_filt']
     re_sf = parameters['downsample_rate']
 
-    for i in range(len(df)):
-        index = df.iloc[i].name
-        row_new = db.set_version_analysis('model',df.iloc[i].copy())
-        df = db.append_to_or_merge_with_states_df(df, row_new)
-    df = df.query('model_v == ' + f'{1}')
+    #for i in range(len(df)):
+    #    index = df.iloc[i].name
+    #    row_new = db.set_version_analysis('model',df.iloc[i].copy())
+    #    df = db.append_to_or_merge_with_states_df(df, row_new)
+    #df = df.query('model_v == ' + f'{1}')
 
     #try:
     #    df.reset_index()[['session','trial', 'is_rest']].set_index(['session','trial', 'is_rest'], verify_integrity=True)
@@ -110,10 +111,17 @@ def run_model_reconstruction(selected_rows, parameters):
             # gaussian filter the videos
             Y_rec_filtered = high_pass_filter_space(Y_rec, gSig_filt)
             # downsample video
-            Y_rec_filtered.resize([Y_rec_filtered.shape[0], int(Y_rec_filtered.shape[1]/re_sf) , int(Y_rec_filtered.shape[2]/re_sf)])
+            img = Y_rec_filtered[0, :, :]
+            scale_percent = 10  # percent of original size
+            width = int(img.shape[1] * scale_percent / 100)
+            height = int(img.shape[0] * scale_percent / 100)
+            dim = (width, height)
+            Y_rec_downsample = np.zeros([Y_rec_filtered.shape[0],dim[1],dim[0]])
+            for i in range(Y_rec_filtered.shape[0]):
+                Y_rec_downsample[i,:,:] =  cv2.resize(Y_rec_filtered[i,:,:], dim, interpolation=cv2.INTER_AREA)
 
             # add trial video to a list
-            model_list.append(cm.movie(Y_rec_filtered))
+            model_list.append(cm.movie(Y_rec_downsample))
 
     # use cn.concatenate to create one temporal video.
     complete_model = cm.concatenate(model_list, axis=0)

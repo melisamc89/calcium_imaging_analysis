@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 @author: Melisa
-Created on Tue Jan 28 12.00.00 2020
+Created on Thrus Jun  11 12:59:00 2020
+
 """
 
 import os
@@ -43,7 +44,7 @@ component_evaluation_version = 1
 registration_version = 0
 cropping_number = [1,2,3,4]
 
-parameters_model = {'session_wise': False, 'gSig_filt': (10, 10), 'downsample_rate': 10}
+parameters_model = {'session_wise': False, 'gSig_filt': (5, 5), 'downsample_rate': 10}
 
 for session in sessions:
     for cropping_version in cropping_number:
