@@ -81,10 +81,10 @@ def run_model_reconstruction(selected_rows, parameters):
     evaluated_trials = []
     for i in range(len(df)):
         row = df.iloc[i]
-        if type(row['component_evaluation_output'] ) == str:
+        if type(row['source_extraction_output'] ) == str:
             evaluated_trials.append((df.iloc[i].name[2] - 1) * 2 + df.iloc[i].name[3])  ## number that goes from 0 to 42
 
-            component_evaluation_hdf5_file_path = eval(row['component_evaluation_output'])['main']   # cnmf path
+            component_evaluation_hdf5_file_path = eval(row['source_extraction_output'])['main']   # cnmf path
             corr_path = eval(row['source_extraction_output'])['meta']['corr']['main']                # corr image path
             cnm = load_CNMF(component_evaluation_hdf5_file_path)                                     # load cnmf object
             cn_filter = np.load(db.get_file(corr_path))                                              # load corr image
@@ -104,7 +104,7 @@ def run_model_reconstruction(selected_rows, parameters):
                                                                                                             offset_method="denoised_floor")
             # recreate video with model
             dims = cn_filter.shape
-            Y_rec = cnm.estimates.A[:,cnm.estimates.idx_components].dot(cnm_normed[cnm.estimates.idx_components,:])
+            Y_rec = cnm.estimates.A.dot(cnm_normed)
             Y_rec = Y_rec.reshape(dims + (-1,), order='F')
             Y_rec = Y_rec.transpose([2, 0, 1])
 
