@@ -186,7 +186,7 @@ def run_registration(selected_rows,parameters):
         accepted_size = []
         size = A_list[i].sum(axis=0)
         for j in range(size.shape[1]):
-            if size[0, j] > 10 and size[0, j] < 25:
+            if size[0, j] > 15 and size[0, j] < 20:
                 accepted_size.append(j)
         if len(accepted_size) > 1:
             new_A_list.append(A_list[i][:, accepted_size])
@@ -209,16 +209,22 @@ def run_registration(selected_rows,parameters):
     #        positions =np.where(assignments[cell]==trial)[0]
     #        new_assignments[cell][positions]= np.ones_like(positions) * evaluated_trials[trial]
 
+    if parameters['day_wise']:
+        day_evaluated = np.zeros(len(new_evaluated_trials))
+        for i in range(len(day_evaluated)):
+            day_evaluated[i] =  int(new_evaluated_trials[i]/10)
+        new_evaluated_trials = day_evaluated
+
     new_assignments = np.zeros((spatial_union.shape[1],len(timeline)))
     for i in range(spatial_union.shape[1]):
         for j in range(assignments.shape[1]):
-            trial = new_evaluated_trials[j]
+            trial = int(new_evaluated_trials[j])
             if math.isnan(assignments[i, j]) == False:
                 new_assignments[i][trial] = assignments[i, j]+1
 
     for i in range(spatial_union.shape[1]):
         for j in range(assignments.shape[1]):
-            trial = new_evaluated_trials[j]
+            trial = int(new_evaluated_trials[j])
             if math.isnan(assignments[i, j]) == False:
                 C_matrix[i][timeline[trial][1]:timeline[trial][1]+(C_list[j])[int(assignments[i, j]), :].shape[0]] =  (C_list[j])[int(assignments[i, j]), :]
                 #C_matrix[i][timeline[trial][1]:timeline[trial+1][1]] = (C_list[j])[int(assignments[i, j]), :]

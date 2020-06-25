@@ -30,13 +30,13 @@ analysis_states_database_path = paths.analysis_states_database_path
 backup_path = 'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
 
-mouse_number = 32365
-sessions = [2,3]
+mouse_number = 56165
+sessions = [1,2,4]
 is_rest = None
 
 decoding_version = 1
-motion_correction = 100
-alignment_version = 1
+motion_correction = 20
+alignment_version = 3
 equalization_version = 0
 source_extraction_version = 1
 component_evaluation_version = 1
@@ -53,7 +53,7 @@ for session in sessions:
                                   source_extraction_v=source_extraction_version,
                                   component_evaluation_v= component_evaluation_version)
         parameters_registration = {'session_wise': False, 'model_method': False, 'cost_threshold': 0.9, 'max_dist': 15,
-                      'min_cell_size': 10, 'max_cell_size': 25, 'scramble': True, 'normalization': True}
+                      'min_cell_size': 10, 'max_cell_size': 25, 'scramble': False, 'normalization': True, 'day_wise' : True}
         if parameters_registration['scramble']:
             shuffle_selected_rows = selected_rows.sample(frac = 1)
         else:

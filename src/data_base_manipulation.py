@@ -18,7 +18,6 @@ import collections
 import math
 import datetime
 import shutil
-import random
 import numpy as np
 
 import src.paths as paths
@@ -36,7 +35,8 @@ steps = [
         'source_extraction', # neural activity is deconvolved from the videos
         # trial-wise or session-wise
         'component_evaluation',
-        'registration'
+        'registration',
+        'model'
         ]
 
 def get_step_index(step):
@@ -155,7 +155,11 @@ def set_version_analysis(step, row, session_wise=False):
     row_local = row.copy()
     if step_index == 0:
         replace_at_index1(index, 4 , 1)
-    if step_index > 0:
+
+    if step_index == 8:
+        replace_at_index1(index, 12 , 1)
+
+    if step_index > 0 and step_index < 8:
 
         # Select the specified data
         data_criteria_0 = [index[0], index[1], index[2], index[3]]
@@ -171,7 +175,7 @@ def set_version_analysis(step, row, session_wise=False):
             selected_rows = states_df
 
         # Select the specified analysis version
-        analysis_criteria_0 = [index[4], index[5], index[6], index[7], index[8], index[9], index[10], None]
+        analysis_criteria_0 = [index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], None]
         for ii in range(step_index, len(analysis_criteria_0)):
             analysis_criteria_0[ii] = None
         analysis_criteria = {paths.analysis_structure[i]: analysis_criteria_0[i] for i in
@@ -257,9 +261,6 @@ def set_version_analysis(step, row, session_wise=False):
 
     row_local.name = new_index
     return row_local
-
-
-
 
 
 def get_expected_file_path(step, subdirectory, index, extension):
@@ -354,10 +355,9 @@ def append_to_or_merge_with_states_df(states_df, inp):
     return states_df
 
 
-
 def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,
            decoding_v=None, cropping_v=None, motion_correction_v=None, alignment_v=None, equalization_v=None,
-           source_extraction_v=None, component_evaluation_v=None, registration_v=None, max_version=True):
+           source_extraction_v=None, component_evaluation_v=None, registration_v=None, model_v = None, max_version=True):
     '''
     This function selects certain analysis states (specified by mouse, session, trial, is_rest,
     decoding_v, cropping_v, etc.) to be used in a certain step.
@@ -423,7 +423,7 @@ def select(states_df, step, mouse=None, session=None, trial=None, is_rest=None,
 
     # Select the specified analysis version
     analysis_criteria_0 = [decoding_v, cropping_v, motion_correction_v, alignment_v, equalization_v, source_extraction_v,
-                           component_evaluation_v, registration_v]
+                           component_evaluation_v, registration_v, model_v]
     analysis_criteria = {paths.analysis_structure[i]: analysis_criteria_0[i] for i in
                          range(0, len(paths.analysis_structure)) if analysis_criteria_0[i] != None}
     query = get_query_from_dict(analysis_criteria)
