@@ -7,6 +7,12 @@
 import os
 import psutil
 import numpy as np
+import sys
+
+# This should be in another file. Let's leave it here for now
+sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
+sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
+
 
 import src.configuration
 import caiman as cm
