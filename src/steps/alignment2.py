@@ -285,7 +285,11 @@ def run_alignmnet_2(selected_rows, parameters, dview):
         m = cm.load(alignment_output['main'])
         shape_x_list.append(m.shape[1])
         shape_y_list.append(m.shape[2])
+<<<<<<< HEAD
         trial_index_list.append(db.get_trial_name(int(idx[2]), idx[3]))
+=======
+        trial_index_list.append(db.get_trial_name(idx[2], idx[3]))
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
         [x1,x2,y1,y2] = alignment_output['meta']['cropping_points']
         x_.append(x1)
         _x.append(x2)
@@ -366,6 +370,7 @@ def run_alignmnet_2(selected_rows, parameters, dview):
     # Create a timeline and store it
     timeline = [[trial_index_list[0], 0]]
     timepoints = [0]
+<<<<<<< HEAD
     timeline_pkl_file_path = os.environ['DATA_DIR'] + f'data/interim/alignment/meta/timeline/' + file_name + '_' + f'{len(timepoints)}' + '.pkl'
     with open(timeline_pkl_file_path, 'wb') as f:
         pickle.dump(timeline, f)
@@ -377,6 +382,15 @@ def run_alignmnet_2(selected_rows, parameters, dview):
             timeline_pkl_file_path = os.environ['DATA_DIR'] + f'data/interim/alignment/meta/timeline/' + file_name + '_'+ f'{len(timepoints)}' + '.pkl'
             with open(timeline_pkl_file_path,'wb') as f:
                 pickle.dump(timeline,f)
+=======
+    for i in range(1, len(m_list)):
+        m = m_list[i-1]
+        timeline.append([trial_index_list[i], timeline[i - 1][1] + m.shape[0]])
+        timepoints.append(timepoints[i-1]+ m.shape[0])
+        timeline_pkl_file_path = os.environ['DATA_DIR'] + f'data/interim/alignment/meta/timeline/' + file_name + '_'+ f'{len(timepoints)}' + '.pkl'
+        with open(timeline_pkl_file_path,'wb') as f:
+            pickle.dump(timeline,f)
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
     output['meta']['timeline'] = timeline_pkl_file_path
     timepoints.append(movie.shape[0])

@@ -65,7 +65,11 @@ for session in sessions:
 
 concateneted_files_dir = os.environ['DATA_DIR'] + 'data/interim/reconstruction/trial_wise/'
 time_sf = 10
+<<<<<<< HEAD
 registration_version = 1
+=======
+registration_version = 2
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 for session in sessions:
     calcium_trace = []
     calcium_trace_shape = []
@@ -123,6 +127,7 @@ for session in sessions:
     output_file_name = db.create_file_name(7, row.name)
     np.save(concateneted_files_dir + output_file_name, activity_matrix)
 
+<<<<<<< HEAD
 ############################
 #%%
 
@@ -212,3 +217,5 @@ for session in [1,2,4]:
 
         figure.savefig(figure_path + figure_name)
 
+=======
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9

@@ -14,8 +14,11 @@ import os
 import src.data_base_manipulation as db
 
 
+<<<<<<< HEAD
 def run_component_evaluation(row, parameters, set_version=None, session_wise=False, equalization=False):
 
+=======
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
     step_index = 6
     row_local = row.copy()
     row_local.loc['component_evaluation_parameters'] = str(parameters)

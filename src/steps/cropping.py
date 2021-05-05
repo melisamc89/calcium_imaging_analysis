@@ -147,6 +147,10 @@ def cropping_interval():
     #print(parameters_cropping)
     return parameters_cropping
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 def cropping_segmentation(parameters_cropping):
     '''
     This function takes the cropping interval and segment the image in 4 different regions.
@@ -177,6 +181,10 @@ def cropping_segmentation(parameters_cropping):
 
     return cropping_parameters_list
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 def plot_movie_frame(row):
     '''
     This function creates an image for visual inspection of cropping points.

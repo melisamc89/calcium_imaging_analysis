@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-
-
 @author: Melisa Maidana
-
 
 Functions in this python file are related to plotting different stages of the calcium imaging analysis pipeline.
 
@@ -29,6 +26,8 @@ import src.analysis_files_manipulation as fm
 from caiman.source_extraction.cnmf.initialization import downscale
 import logging
 from random import randrange
+from matplotlib.patches import Rectangle
+
 
 def plot_movie_frame(row):
     '''
@@ -69,6 +68,7 @@ def plot_temporal_evolution(row,session_wise = False):
         output = row['alignment_output']
     else:
         output = row['decoding_output']
+
     decoded_file = eval(output)['main']
     if row.name[7] == 2:
         decoded_file = eval(output)['equalization']['main']
@@ -83,9 +83,11 @@ def plot_temporal_evolution(row,session_wise = False):
     figure_ax1.set_xticks([])
 
     figure_ax2 = figure.add_subplot(gs[2:5, 0:3])
-    figure_ax2.set_xlabel('Time [frames]', fontsize = 15)
+    figure_ax2.set_xlabel('Time [s]', fontsize = 15)
     figure_ax2.set_ylabel('Pixel value', fontsize = 15)
     figure_ax2.set_title('Temporal Evolution', fontsize = 15)
+    figure_ax2.set_ylim((400,2000))
+
 
     figure_ax1.imshow(movie_original[0,:,:], cmap = 'gray')
     color = ['b', 'r' , 'g', 'c', 'm']
@@ -95,17 +97,33 @@ def plot_temporal_evolution(row,session_wise = False):
         [x_, _x, y_, _y] = [x-5,x+5,y-5,y+5]
         rect = Rectangle((y_, x_), _y - y_, _x - x_, fill=False, color=color[i], linestyle='-', linewidth=2)
         figure_ax1.add_patch(rect)
-        figure_ax2.plot(np.arange(0,movie_original.shape[0],), movie_original[:,x,y], color = color[i])
+        figure_ax2.plot(np.arange(0,movie_original.shape[0],)/10, movie_original[:,x,y], color = color[i])
 
         figure_ax_i = figure.add_subplot(gs[i, 4:])
-        figure_ax_i.hist(movie_original[:,x,y],20, color = color[i])
-        figure_ax_i.set_xlim((500,1200))
+        figure_ax_i.hist(movie_original[:,x,y],50, color = color[i])
+        figure_ax_i.set_xlim((400,1100))
         figure_ax_i.set_ylabel('#')
         figure_ax_i.set_xlabel('Pixel value')
 
-    path = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/interim/decoding/meta/'
-    name = db.create_file_name(1,row.name)
+    path = os.environ['DATA_DIR']+ '/data/interim/decoding/meta/'
+    name = db.create_file_name(1, row.name)
+    if session_wise:
+        path = os.environ['DATA_DIR'] + '/data/interim/alignment/meta/'
+        name = db.create_file_name(4,row.name)
+    if row.name[7] == 2:
+        name = db.create_file_name(4, row.name)
     figure.savefig(path + name + '.png')
+
+    figure2, axes = plt.subplots(1)
+    mean_movie = np.mean(movie_original,axis = (1,2) )
+    axes.plot(np.arange(0, movie_original.shape[0], ) / 10, mean_movie, color='b')
+    axes.set_xlabel('Time [s]', fontsize = 15)
+    axes.set_ylabel('Mean Pixel Value', fontsize = 15)
+    axes.set_title('Temporal Evolution', fontsize = 15)
+    axes.set_ylim((400,2000))
+    if row.name[7] == 2:
+        name = db.create_file_name(4, row.name)
+    figure2.savefig(path + name + '_mean.png')
 
     return
 
@@ -676,10 +694,11 @@ def plot_multiple_contours(rows, version = None , corr_array = None, pnr_array =
                 axes[ii, jj].set_title('min_corr = ' + f'{round(corr_array[ii],2)}')
                 axes[ii, jj].set_ylabel('min_pnr = ' + f'{round(pnr_array[jj],2)}')
 
-    fig_dir = 'data/interim/source_extraction/trial_wise/meta/figures/contours/'
+    #fig.set_size_inches([10., .3 * len(C)])
+    fig_dir = os.environ['DATA_DIR'] + 'data/interim/source_extraction/trial_wise/meta/figures/contours/'
     if session_wise:
-        fig_dir = 'data/interim/source_extraction/session_wise/meta/figures/contours/'
-    fig_name = fig_dir + db.create_file_name(3, new_row.name)+'_corr_min' + f'{round(corr_array[0],1)}'+ '_pnr_min'+f'{round(pnr_array[0],1)}' + '_.png'
+        fig_dir = os.environ['DATA_DIR'] + 'data/interim/source_extraction/session_wise/meta/figures/contours/'
+    fig_name = fig_dir + db.create_file_name(5, new_row.name)+'_corr_min' + f'{round(corr_array[0],1)}'+ '_pnr_min'+f'{round(pnr_array[0],1)}' + '_.png'
     figure.savefig(fig_name)
 
     return figure

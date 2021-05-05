@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 @author: Melisa
+<<<<<<< HEAD
 Created on Tue Jan 28 12.00.00 2020
+=======
+
+Created on Tue Jan 28 12.00.00 2020
+
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 """
 
 import os
@@ -14,8 +20,16 @@ import math
 from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
 
+<<<<<<< HEAD
 import src.configuration
 import src.paths as paths
+=======
+# This should be in another file. Let's leave it here for now
+sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
+sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
+
+import src.configuration
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 import caiman as cm
 from caiman.base.rois import com
 import src.data_base_manipulation as db
@@ -23,6 +37,10 @@ from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.analysis.figures as figures
 from caiman.base.rois import register_multisession
 from src.steps.registering import run_registration as main_registration
+<<<<<<< HEAD
+=======
+import src.paths as paths
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
 # Paths
 analysis_states_database_path = paths.analysis_states_database_path
@@ -95,8 +113,12 @@ for session in [3, 4]:
     np.save(concateneted_files_dir + output_file_name, activity_matrix)
 
 
+<<<<<<< HEAD
 
 ### This is for session wise registration
+=======
+#%% This is for session wise registration
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
 for cropping_version in [1,3,4,2]:
     selected_rows = db.select(states_df, 'registration', mouse=mouse_number, is_rest=is_rest,
@@ -353,4 +375,9 @@ for n in range(5):
             axes.plot(*v.T, c='w')
         figure.suptitle('Mouse 56165 session 1 trial ' + f'{i}')
         figure_name = 'contours/mouse_56165_session_1_trial_'+ f'{i}' + '_R_v1.1.100.0.1.1.png'
+<<<<<<< HEAD
         figure.savefig(figure_path + figure_name)
+=======
+        figure.savefig(figure_path + figure_name)
+
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9

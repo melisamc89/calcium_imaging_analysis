@@ -5,7 +5,10 @@ Created on Fri Sep 20 11:50:40 2019
 
 @author: Melisa
 """
+<<<<<<< HEAD
 
+=======
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 import os
 # Define the steps in the pipeline (in order)
 steps = [
@@ -20,24 +23,38 @@ steps = [
         'source_extraction', # neural activity is deconvolved from the videos
         # trial-wise or session-wise
         'component_evaluation',
+<<<<<<< HEAD
         'registration',
         'model'
         ]
 
+=======
+        'registration'
+        ]
+
+
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 # Paths
 #for running the pipeline
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_trial_wise_analysis.xlsx'
 # Paths
 #for running the pipeline day based
+<<<<<<< HEAD
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_day_wise_analysis.xlsx'
 #for running day wise 2021
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_data_base_2021.xlsx'
 analysis_states_database_path = '/scratch/melisa/calcium_imaging_analysis/references/analysis/calcium_data_base_2021.xlsx'
+=======
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_day_wise_analysis.xlsx'
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 ##for parameters selection
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/data_base_templete_control3.xlsx'
 #for alejandra alonsos data
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_alonso2.xlsx'
+<<<<<<< HEAD
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_alonso2_day_wise.xlsx'
+=======
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
 ### auxiliary for neuro_course
 #analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/auxiliary_data_base.xlsx'
@@ -45,15 +62,21 @@ analysis_states_database_path = '/scratch/melisa/calcium_imaging_analysis/refere
 backup_path = os.environ['PROJECT_DIR']  + 'references/analysis/backup/'
 parameters_path = os.environ['PROJECT_DIR']  + 'references/analysis/parameters_database.xlsx'
 
-# Multi Index Structure
+# Multi Index Structurepy   
 data_structure = ['mouse', 'session', 'trial', 'is_rest']
 analysis_structure = [f'{step}_v' for step in steps]
 multi_index_structure = data_structure + analysis_structure
 
 # Columns
+<<<<<<< HEAD
 columns = data_structure + ['experiment_parameters',
             'experiment_comments',
             'raw_output',
+=======
+columns = data_structure + ['experiment_parameters', 
+            'experiment_comments', 
+            'raw_output', 
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
             'raw_comments']
 # for each step, add a 'v' (version), 'parameters', 'output' and 'comments' columns
 for step in steps:

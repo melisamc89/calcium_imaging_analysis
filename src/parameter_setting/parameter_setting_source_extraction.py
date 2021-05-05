@@ -2,18 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct  2 09:19:20 2019
-
 @author: Melisa
-
 This script is designed to explore the effect of different source extraction paramenters in the final output of the algorithm.\
-
 Three main parameters are explores: gSig (typical neuron size), minimal pnr and minimal correlation (seeds or initial
 conditions for the CNMF-E algorithm).
-
 It produces different kind of plots where visual inspection of parameter selection is easy to evaluate :
-
-
 """
+import os
 import sys
 import psutil
 import logging
@@ -23,52 +18,60 @@ import numpy as np
 import src.configuration
 import caiman as cm
 import src.data_base_manipulation as db
+import src.paths as paths
 
-from src.steps.source_extraction import run_source_extraction as main_source_extraction
-import src.analysis.figures as figures
+from src.analysis.figures import plot_movie_frame, plot_movie_frame_cropped, get_fig_gSig_filt_vals
 import src.analysis.metrics as metrics
+from caiman.source_extraction.cnmf.cnmf import load_CNMF
+from src.steps.source_extraction import run_source_extraction as main_source_extraction
 
+import src.analysis.figures as figures
+
+<<<<<<< HEAD
 # Paths to data base and back up
 analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
 backup_path = 'references/analysis/backup/'
 parameters_path = 'references/analysis/parameters_database.xlsx'
+=======
+#%%
+# Paths
+analysis_states_database_path = paths.analysis_states_database_path
+backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
+#parameters_path = 'references/analysis/parameters_database.xlsx'
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
-#load data base
-states_df = db.open_analysis_states_database()
-#define the experimental details
-mouse = 32364#56165
-session = 1
-trial = None
+## Open thw data base with all data
+states_df = db.open_analysis_states_database(path = analysis_states_database_path)
+
+
+mouse_number = 56165
+
+sessions = [1,2]
+init_trial = 1
+end_trial = 25
 is_rest = None
+session = 1
+
 
 #define previus steps analysis versions that are desired to explore in source extraction
 decoding_version =1
 cropping_version = 1
 motion_correction_version = 1
 
-## use now until conexion with the server is back (this is to load the data base directly from the computer)
-#import pandas as pd
-#import src.paths as paths
-#states_df = pd.read_excel(analysis_states_database_path, dtype={'date': 'str', 'time': 'str'}).set_index(paths.multi_index_structure)
-
 #select states for source extraction
-selected_rows = db.select(states_df,'source_extraction', mouse = mouse, session = session, trial = trial, is_rest = is_rest,
-                          cropping_v =  cropping_version, motion_correction_v = motion_correction_version)
+selected_rows = db.select(states_df,'source_extraction', mouse = mouse_number, session = session,
+                          cropping_v =  cropping_version, motion_correction_v = motion_correction_version, max_version=False)
 
 #for testing parameters select one of the states
 mouse_row = selected_rows.iloc[0]
 
 #%%For visualization: plot different gSig size in corr and pnr images
-
 #define the values of interest for gSig_size (remember this is not the same as for motion correction) and this is related
 #to the typical neuronal size and to the ring model for the background in the CNMF-E pipeline.
-
-
 gSig_size = np.arange(1,10,1)
 corr = np.zeros(gSig_size.shape)
 pnr = np.zeros(gSig_size.shape)
 comb = np.zeros(gSig_size.shape)
-
 ii=0
 for gSig in gSig_size:
     gSiz = 4*gSig+1
@@ -87,15 +90,11 @@ for gSig in gSig_size:
 
 #%%
 ## Now we explore selection of min_corr and min_pnr. For that we selected one value of gSig that was considered reasonable.
-
 # From now on, corr_min and pnr_min will be the most relevant parameters to tuned, as they are the seeds of the algorithm.
 # From the output of this exploration, it is visible how the inicial conditions affects the final output of the algorithm.
-
-
 # selected fixed gSig and gSiz
 gSig = 5
 gSiz = 4 * gSig + 1
-
 parameters_source_extraction ={'session_wise': False, 'fr': 10, 'decay_time': 0.1, 'min_corr': 0.6, 'min_pnr': 5,
                                    'p': 1, 'K': None, 'gSig': (gSig, gSig), 'gSiz': (gSiz, gSiz), 'merge_thr': 0.7, 'rf': 60,
                                    'stride': 30, 'tsub': 1, 'ssub': 2, 'p_tsub': 1, 'p_ssub': 2, 'low_rank_background': None,
@@ -104,8 +103,6 @@ parameters_source_extraction ={'session_wise': False, 'fr': 10, 'decay_time': 0.
                                    'update_background_components': True,
                                    'center_psf': True, 'border_pix': 0, 'normalize_init': False,
                                    'del_duplicates': True, 'only_init': True}
-
-
 corr_hist,pos_corr, pnr_hist, pos_pnr = metrics.create_corr_pnr_histogram(mouse_row,parameters_source_extraction)
 histogram_dir = 'data/interim/source_extraction/trial_wise/meta/'
 
@@ -116,12 +113,10 @@ histogram_pnr = figures.plot_histogram(pos_pnr[:-1],pnr_hist, title = 'PNR Histo
 histogram_pnr_name= histogram_dir + f'figures/corr_pnr/histogram/{db.create_file_name(3, mouse_row.name)}_gSig_{gSig}_pnr.png'
 histogram_pnr.savefig(histogram_pnr_name)
 
-
 ## Select a set of parameters and plot the binary corr, pnr and combined image to explore visualy different seed selections.
 corr_limits = np.linspace(pos_corr[40],pos_corr[40]+0.2,5)
 pnr_limits = np.linspace(pos_pnr[5],pos_pnr[5]+10,5)
 figures.plot_corr_pnr_binary(mouse_row, corr_limits, pnr_limits, parameters_source_extraction)
-
 
 #%% Now running source_extraction in the selected parameters and evaluation the result.
 # First evaluation is visual inspection of contours
@@ -147,7 +142,10 @@ logging.info(f'Starting cluster. n_processes = {n_processes}.')
 #gSiz = 4 * gSig + 1
 
 version = np.zeros((len(corr_limits)*len(pnr_limits)))
-
+corr_limits = np.linspace(0.4, 0.6, 5)
+pnr_limits = np.linspace(3, 7, 5)
+gSig = 5
+gSiz = 4 * gSig + 1
 for ii in range(corr_limits.shape[0]):
     for jj in range(pnr_limits.shape[0]):
         parameters_source_extraction ={'session_wise': False, 'fr': 10, 'decay_time': 0.1, 'min_corr': corr_limits[ii],
@@ -164,15 +162,20 @@ for ii in range(corr_limits.shape[0]):
         #save the version number for furhter plotting
         version[ii*len(pnr_limits)+jj] = mouse_row_new.name[8]
 
+#%%
 ## plottin. This funcion  shoul be improved to be given a list of corr and pnr values and search in the data base that
 #specific values, insted of going all over the versions values...
-selected_rows = db.select(states_df,'component_evaluation',mouse = mouse, session = session, is_rest= is_rest,
+version = np.arange(1,100)
+corr_limits = np.linspace(0.4, 0.6, 10)
+pnr_limits = np.linspace(3, 7, 10)
+selected_rows = db.select(states_df,'component_evaluation',mouse = mouse_number, session = session,
                           cropping_v = cropping_version,
                           motion_correction_v = motion_correction_version, alignment_v= 0,max_version=False )
-figures.plot_multiple_contours(selected_rows, version, corr_limits, pnr_limits)
-figures.plot_traces_multiple(selected_rows, version , corr_limits, pnr_limits)
 
-cm.stop_server(dview=dview)
+figures.plot_multiple_contours(selected_rows, version, corr_limits, pnr_limits)
+#figures.plot_traces_multiple(selected_rows, version , corr_limits, pnr_limits)
+
+#cm.stop_server(dview=dview)
 
 
 #%% So far this can be run for each mouse, session, trial and resting condition with out possibility of generalizing.

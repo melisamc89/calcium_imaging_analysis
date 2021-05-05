@@ -26,7 +26,11 @@ def run_source_extraction(row, parameters, dview, session_wise=False):
     perform source extraction on it using cnmf-e and save the cnmf object as a .pkl file.
     Args:
         row: pd.DataFrame object
+<<<<<<< HEAD
             The row corresponding to the analysis state to be source extracted. 
+=======
+            The row corresponding to the analysis state to be source extracted.
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
     Returns:
         row: pd.DataFrame object

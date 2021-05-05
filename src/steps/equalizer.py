@@ -93,7 +93,11 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         #auxiliar.update({'equalizing_output' : output})
         # row_local.loc['alignment_output'] = str(auxiliar)
         row_local.loc['equalization_output'] = output
+<<<<<<< HEAD
         #states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
+=======
+        states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
     else:
         # Get necessary parameters and create a list with the paths to the relevant files
@@ -158,9 +162,17 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
             #row_local.loc['decoding_output'] = str(auxiliar)
             row_local['equalization_output'] = output
             movie_equalized.save(output_tif_file_path + db.create_file_name(0,row_local.name) + '.tif')
+<<<<<<< HEAD
             df = db.append_to_or_merge_with_states_df(df, row_local)
 
     return df
+=======
+            states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
+
+    db.save_analysis_states_database(states_df, paths.analysis_states_database_path, paths.backup_path)
+
+    return states_df
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
 def do_equalization(reference):
 

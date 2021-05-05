@@ -15,11 +15,20 @@ import pylab as pl
 import pandas as pd
 from scipy.sparse import csr_matrix
 
+<<<<<<< HEAD
+=======
+# This should be in another file. Let's leave it here for now
+sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
+sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
+
+
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 import matplotlib.pyplot as plt
 import src.configuration
 import caiman as cm
 import src.data_base_manipulation as db
 from src.steps.decoding import run_decoder as main_decoding
+from src.steps.decoding import fake_decoder
 from src.steps.cropping import run_cropper as main_cropping
 from src.steps.equalizer import  run_equalizer as main_equalizing
 from src.steps.cropping import cropping_interval, cropping_segmentation
@@ -32,12 +41,14 @@ import src.analysis_files_manipulation as fm
 import src.analysis.metrics as metrics
 from caiman.source_extraction.cnmf.cnmf import load_CNMF
 import src.analysis.figures as figures
+import src.paths as paths
 from caiman.base.rois import register_multisession
 from caiman.source_extraction.cnmf.initialization import downscale
 #from src.steps.equalizer import run_equalizer as main_equalizing
 
 
 # Paths
+<<<<<<< HEAD
 analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
 backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
 states_df = db.open_analysis_states_database(path = analysis_states_database_path)
@@ -46,7 +57,22 @@ mouse_number = 32363
 sessions = [1,2]
 init_trial = 1
 end_trial = 22
+=======
+analysis_states_database_path = paths.analysis_states_database_path
+backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
+#parameters_path = 'references/analysis/parameters_database.xlsx'
+
+## Open thw data base with all data
+states_df = db.open_analysis_states_database(path = analysis_states_database_path)
+
+mouse_number = 32364
+
+sessions = [1,2]
+init_trial = 1
+end_trial = 25
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 is_rest = None
+session = 1
 
 
 #%% Select first data
@@ -60,11 +86,42 @@ parameters_cropping = cropping_interval() #check whether it is better to do it l
 # and set parameters from the data_base_manipulation file
 
 
+<<<<<<< HEAD
 #  Select first data
 selected_rows = db.select(states_df, 'decoding', mouse=mouse_number, is_rest=is_rest, decoding_v= 1)
 mouse_row = selected_rows.iloc[0]
 #mouse_row = main_decoding(mouse_row)
 plot_movie_frame(mouse_row)
+=======
+#%% Run decoding for group of data tha have the same cropping parameters (same mouse)
+for session in sessions:
+    selected_rows = db.select(states_df,'decoding',mouse = mouse_number,session=session, is_rest=is_rest)
+
+    for i in range(init_trial,end_trial):
+        selection = selected_rows.query('(trial ==' + f'{i}' + ')')
+        for j in range(len(selection)):
+            mouse_row = selection.iloc[j]
+            mouse_row = main_decoding(mouse_row)
+            states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
+            db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
+
+    decoding_version = mouse_row.name[4]
+#%% Run cropping for the already decoded group
+
+selected_rows = db.select(states_df,'cropping',mouse = mouse_number,session=session, is_rest=is_rest, decoding_v = decoding_version)
+
+for i in range(init_trial,end_trial):
+    selection = selected_rows.query('(trial ==' + f'{i}' + ')')
+    for j in range(len(selection)):
+        mouse_row = selection.iloc[j]
+        mouse_row = main_cropping(mouse_row, parameters_cropping)
+        states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
+        db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
+
+cropping_version = mouse_row.name[5] # set the cropping version to the one currently used
+#%% Select rows to be motion corrected using current version of cropping, define motion correction parameters
+# (refer to parameter_setting_motion_correction)
+>>>>>>> f40749622807a6c7b503bad95384622204adccd9
 
 # select cropping parameters
 parameters_cropping = cropping_interval()  # check whether it is better to do it like this or to use the functions get
@@ -412,51 +469,4 @@ np.save(file_name_number,number_cell5)
 file_name_fraction = '/home/sebastian/Documents/Melisa/calcium_imaging_analysis/data/interim/component_evaluation/session_wise/meta/metrics/' + db.create_file_name(5,mouse_row.name) + '_fraction'
 np.save(file_name_fraction,fraction5)
 
-
-#%% Working with matching!!!!!! (IN DEVELOPMENT)
-
-one_version = 13
-selected_rows = db.select(states_df,'source_extraction',56165, cropping_v =  1,
-                          motion_correction_v=1, source_extraction_v =one_version)
-
-A_list = []
-A_pixel = []
-A_dims = []
-A_components=[]
-for i in range(1,3):
-    row= selected_rows.iloc[i]
-    source_extraction_output = eval(row.loc['source_extraction_output'])
-    input_hdf5_file_path = source_extraction_output['main']
-    cnm = load_CNMF(input_hdf5_file_path)
-    corr_path = source_extraction_output['meta']['corr']['main']
-    cn_filter = np.load(db.get_file(corr_path))
-    A_dims.append(cn_filter.shape)
-    A_pixel.append(cnm.estimates.A.shape[0])
-    A_components.append(cnm.estimates.A.shape[1])
-    A_list.append(cnm.estimates.A)
-
-new_dims = A_dims[np.argmin(A_pixel)]
-new_pixel = min(A_pixel)
-new_A_list = []
-for i in range(0,5):
-    current_list = A_list[i]
-    new_A_list.append(current_list[:new_pixel])
-
-spatial_union, assignments, match = register_multisession(A=new_A_list, dims=new_dims)
-
-figure, axes = plt.subplots(figsize=(15, 15))
-coordinates = cm.utils.visualization.get_contours(spatial_union, new_dims, 0.2, 'max')
-
-coordinates5 = coordinates[146:150]
-
-for i in range(5):
-    axes.imshow(cn_filter[:new_dims[0]][:new_dims[1]])
-    for c in coordinates5:
-        v = c['coordinates']
-        c['bbox'] = [np.floor(np.nanmin(v[:, 1])), np.ceil(np.nanmax(v[:, 1])),
-                     np.floor(np.nanmin(v[:, 0])), np.ceil(np.nanmax(v[:, 0]))]
-        axes.plot(*v.T, c='w')
-
-#%%
-cm.stop_server(dview=dview)
 '''
