@@ -5,7 +5,7 @@ os.environ['PROJECT_DIR_LOCAL'] = '/home/sebastian/Documents/Melisa/calcium_imag
 os.environ['PROJECT_DIR_SERVER'] = '/home/mmaidana/src/calcium_imaging_analysis/'
 
 os.environ['DATA_DIR_LOCAL'] = '/mnt/Data01/data/calcium_imaging_analysis/'
-os.environ['DATA_DIR_SERVER'] ='/scratch/melisa/calcium_imaging_analysis/'
+os.environ['DATA_DIR_SERVER'] ='/ceph/imaging1/melisa/calcium_imaging_analysis/'
 
 os.environ['CAIMAN_ENV_SERVER'] = '/memdym/melisa/caiman/bin/python'
 

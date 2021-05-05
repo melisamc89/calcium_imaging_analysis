@@ -35,9 +35,9 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
     brightness or reduce photobleaching. It corrects the video and saves them in the corrected version. It can be run
     with the already aligned videos or trial by trial. for trial by trial, a template is required.
 
-    params selected_rows: pd.DataFrame ->  A dataframe containing the analysis states you want to have equalized
-    params states_df: pd.DataFrame -> A dataframe containing all the analysis data base
-    params parameters: dict -> contains parameters concerning equalization
+    params: selected_rows: pd.DataFrame ->  A dataframe containing the analysis states you want to have equalized
+    params: states_df: pd.DataFrame -> A dataframe containing all the analysis data base
+    params: parameters: dict -> contains parameters concerning equalization
 
     returns : None
     '''
@@ -52,7 +52,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
     #output_steps_file_path = f'data/interim/equalizer/meta/figures/histograms/'+histogram_name
 
     try:
-        df.reset_index()[['trial', 'is_rest']].set_index(['trial', 'is_rest'], verify_integrity=True)
+        df.reset_index()[['session','trial', 'is_rest']].set_index(['session','trial', 'is_rest'], verify_integrity=True)
     except ValueError:
         logging.error('You passed multiple of the same trial in the dataframe df')
         return df
@@ -70,8 +70,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         }
     }
 
-    if session_wise: ## UNDER DEVELOPMENT
-
+    if session_wise:
         row_local = df.iloc[0]
         input_tif_file_list =eval(row_local['alignment_output'])['main']
         movie_original = cm.load(input_tif_file_list)  # load video as 3d array already concatenated
@@ -86,14 +85,15 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
                 movie_equalized[j * 100:(j + 1) * 100, :, :] = do_equalization_from_template(reference=want_to_equalize, source=source)
         #Save the movie
         index = row_local.name
-        new_index = db.replace_at_index1(index, 4 + 3, 2)
+        new_index = db.replace_at_index1(index, 4 + 4, 2) ## version 2 is for session wise
         row_local.name = new_index
         equalized_path = movie_equalized.save(output_tif_file_path + db.create_file_name(0,row_local.name) + '.mmap', order='C')
         output['main'] = equalized_path
-        auxiliar = eval(row_local.loc['alignment_output'])
-        auxiliar.update({'equalizing_output' : output})
-        row_local.loc['alignment_output'] = str(auxiliar)
-        states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
+        #auxiliar = eval(row_local.loc['alignment_output'])
+        #auxiliar.update({'equalizing_output' : output})
+        # row_local.loc['alignment_output'] = str(auxiliar)
+        row_local.loc['equalization_output'] = output
+        #states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
 
     else:
         # Get necessary parameters and create a list with the paths to the relevant files
@@ -101,7 +101,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         input_tif_file_list = []
         trial_index_list = []
         for idx, row in df.iterrows():
-            decoding_output = eval(row.loc['decoding_output'])
+            decoding_output = eval(row.loc['motion_correction_output'])
             decoding_output_list.append(decoding_output)
             input_tif_file_list.append(decoding_output['main'])
             trial_index_list.append(db.get_trial_name(idx[2], idx[3]))
@@ -117,7 +117,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         shape_list = []
         h_step = parameters['histogram_step']
         for i in range(len(input_tif_file_list)):
-            im = io.imread(input_tif_file_list[i]) #load video as 3d array
+            im = cm.load(input_tif_file_list[i]) #load video as 3d array
             m_list.append(im)                      # and adds all the videos to a list
             shape_list.append(im.shape)            # list of sizes to cut the videos in time for making all of them having the same length
             #legend.append('trial = ' + f'{df.iloc[i].name[2]}')
@@ -127,7 +127,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
         m_list_reshape=[]
         m_list_equalized = []
         source =m_list[0][0:100,:,:]
-        #equalize all the videos loades in m_list_reshape with the histogram of source
+        #equalize all the videos loaded in m_list_reshape with the histogram of source
 
         for i in range(len(input_tif_file_list)):
             video= m_list[i]
@@ -142,6 +142,7 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
             m_list_equalized.append(equalized_video)
 
         #convert the 3d np.array to a caiman movie and save it as a tif file, so it can be read by motion correction script.
+        new_rows = []
         for i in range(len(input_tif_file_list)):
             # Save the movie
             row_local = df.iloc[i]
@@ -149,53 +150,17 @@ def run_equalizer(selected_rows, states_df, parameters,session_wise = False):
             movie_equalized = cm.movie(m_list_equalized[i])
             # Write necessary variables to the trial index and row_local
             index = row_local.name
-            new_index = db.replace_at_index1(index, 4 + 0, 2)
+            new_index = db.replace_at_index1(index, 4 + 4, 1)  ## version 1 is for trial wise
             row_local.name = new_index
             output['main'] = output_tif_file_path + db.create_file_name(0,row_local.name) + '.tif'
-            auxiliar = eval(row_local.loc['decoding_output'])
-            auxiliar.update({'equalizing_output' : output})
-            row_local.loc['decoding_output'] = str(auxiliar)
+            #auxiliar = eval(row_local.loc['decoding_output'])
+            #auxiliar.update({'equalizing_output' : output})
+            #row_local.loc['decoding_output'] = str(auxiliar)
+            row_local['equalization_output'] = output
             movie_equalized.save(output_tif_file_path + db.create_file_name(0,row_local.name) + '.tif')
-            states_df = db.append_to_or_merge_with_states_df(states_df, row_local)
+            df = db.append_to_or_merge_with_states_df(df, row_local)
 
-    db.save_analysis_states_database(states_df, paths.analysis_states_database_path, paths.backup_path)
-
-    #ALL OF THIS IS FOR PLOTTING AND SHOULD BE MOVED AND CREATE A FUNCTION IN FIGURES FOR PLOTTING THIS THINGS. (LATER)
-    #aligned_video_original = np.zeros((new_shape[0]*5,5))
-    #aligned_video = np.zeros((new_shape[0]*5,5))
-    #for i in range(len(input_tif_file_list)):
-     #   aligned_video_original[i*new_shape[0]:(i+1)*new_shape[0],1] = m_list_reshape[i][:,600,500]
-      #  aligned_video[i*new_shape[0]:(i+1)*new_shape[0],1] = m_list_equalized[i][:,600,500]
-
-    #figure, axes = plt.subplots(1)
-    #axes.plot(np.linspace(0, len(aligned_video_original), len(aligned_video_original)), aligned_video_original[:, 1])
-    #axes.plot(np.linspace(0, len(aligned_video_original), len(aligned_video_original)), aligned_video[:, 1])
-    #axes.set_xlabel('Frames')
-    #axes.set_ylabel('Pixel value (gray scale)')
-    #axes.legend(['Original aligned signal', 'Histogram matching aligned signal'])
-    #figure.savefig('Example_histogram_matching_3')
-
-    #m_list_equalized = do_equalization(source=m_list_reshape[0][0:100,:,:], reference=m_list_reshape[i][0:100,:,:])
-
-    #hist_template_video, bins_template = np.histogram(m_list_reshape[0][0:100,:,:].flatten(),bins=np.linspace(0,2**10), density= True)
-    #hist_source_video, bins_source = np.histogram(m_list_reshape[i][0:100,:,:].flatten(),bins = np.linspace(0,2**10),density=True)
-    #hist_equalized_video, bins_equalized = np.histogram(m_list_equalized[i][0:100,:,:].flatten(),bins = np.linspace(0,2**10),density=True)
-
-    #figure, axes = plt.subplots(2,2)
-    #axes[0,0].imshow(m_list[0][0,:,:], cmap = 'gray')
-    #axes[1,0].imshow(m_list[i][0,:,:], cmap = 'gray')
-    #axes[1,1].imshow(m_list_equalized[0,:,:], 'gray')
-    #axes[0,1].plot(bins_template[:-1],hist_template_video, color = 'r')
-    #axes[0,1].plot(bins_source[:-1],hist_source_video,'--', color = 'b')
-    #axes[0,1].plot(bins_equalized[:-1],hist_equalized_video, '*', color = 'g')
-    #axes[0,1].legend(['Template','Source','Equalized_Video'])
-    #axes[0,1].set_xlabel('Pixel Intensity (gray scale)')
-    #axes[0,1].set_ylabel('Density')
-    #axes[0, 0].set_title('Template')
-    #axes[1, 0].set_title('Source')
-    #axes[1, 1].set_title('Equalized')
-
-    return
+    return df
 
 def do_equalization(reference):
 
@@ -207,7 +172,7 @@ def do_equalization(reference):
     '''
     # flatten (turns an n-dim-array into 1-dim)
     # sorted pixel values
-    srcInd = np.arange(0, 2 ** 16, 2 ** 16 / len(reference.flatten()))
+    srcInd = np.arange(0, 2 ** 10, 2 ** 10 / len(reference.flatten()))
     srcInd = srcInd.astype(int)
     refInd = np.argsort(reference.flatten())
     #assign...
@@ -268,7 +233,7 @@ def do_linear_fitting(time_signal):
 
     return
 
-#%%%b gitignore
+#%%%b ignore
 ''' 
 figure, axes = plt.subplots(3,2)
 axes[0,0].imshow(movie_original[0,:,:], cmap = 'gray')
@@ -383,3 +348,38 @@ axes[2,1].set_xlabel('Pixel value')
 axes[2,1].set_title('CYAN SQUARE')
 axes[2,1].legend(['1','2','3','4','5'])
 '''
+
+# ALL OF THIS IS FOR PLOTTING AND SHOULD BE MOVED AND CREATE A FUNCTION IN FIGURES FOR PLOTTING THIS THINGS. (LATER)
+# aligned_video_original = np.zeros((new_shape[0]*5,5))
+# aligned_video = np.zeros((new_shape[0]*5,5))
+# for i in range(len(input_tif_file_list)):
+#   aligned_video_original[i*new_shape[0]:(i+1)*new_shape[0],1] = m_list_reshape[i][:,600,500]
+#  aligned_video[i*new_shape[0]:(i+1)*new_shape[0],1] = m_list_equalized[i][:,600,500]
+
+# figure, axes = plt.subplots(1)
+# axes.plot(np.linspace(0, len(aligned_video_original), len(aligned_video_original)), aligned_video_original[:, 1])
+# axes.plot(np.linspace(0, len(aligned_video_original), len(aligned_video_original)), aligned_video[:, 1])
+# axes.set_xlabel('Frames')
+# axes.set_ylabel('Pixel value (gray scale)')
+# axes.legend(['Original aligned signal', 'Histogram matching aligned signal'])
+# figure.savefig('Example_histogram_matching_3')
+
+# m_list_equalized = do_equalization(source=m_list_reshape[0][0:100,:,:], reference=m_list_reshape[i][0:100,:,:])
+
+# hist_template_video, bins_template = np.histogram(m_list_reshape[0][0:100,:,:].flatten(),bins=np.linspace(0,2**10), density= True)
+# hist_source_video, bins_source = np.histogram(m_list_reshape[i][0:100,:,:].flatten(),bins = np.linspace(0,2**10),density=True)
+# hist_equalized_video, bins_equalized = np.histogram(m_list_equalized[i][0:100,:,:].flatten(),bins = np.linspace(0,2**10),density=True)
+
+# figure, axes = plt.subplots(2,2)
+# axes[0,0].imshow(m_list[0][0,:,:], cmap = 'gray')
+# axes[1,0].imshow(m_list[i][0,:,:], cmap = 'gray')
+# axes[1,1].imshow(m_list_equalized[0,:,:], 'gray')
+# axes[0,1].plot(bins_template[:-1],hist_template_video, color = 'r')
+# axes[0,1].plot(bins_source[:-1],hist_source_video,'--', color = 'b')
+# axes[0,1].plot(bins_equalized[:-1],hist_equalized_video, '*', color = 'g')
+# axes[0,1].legend(['Template','Source','Equalized_Video'])
+# axes[0,1].set_xlabel('Pixel Intensity (gray scale)')
+# axes[0,1].set_ylabel('Density')
+# axes[0, 0].set_title('Template')
+# axes[1, 0].set_title('Source')
+# axes[1, 1].set_title('Equalized')

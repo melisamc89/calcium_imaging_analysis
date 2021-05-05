@@ -20,16 +20,17 @@ from src.steps.motion_correction import run_motion_correction as main_motion_cor
 from src.steps.alignment2 import run_alignmnet as main_alignment
 from src.steps.source_extraction import run_source_extraction as main_source_extraction
 from src.steps.component_evaluation import run_component_evaluation as main_component_evaluation
+import src.paths as paths
 
 # Paths
-analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
-backup_path = os.environ['PROJECT_DIR'] +  'references/analysis/backup/'
-states_df = db.open_analysis_states_database(path = analysis_states_database_path)
+analysis_states_database_path = paths.analysis_states_database_path
+backup_path = os.environ['PROJECT_DIR'] + 'references/analysis/backup/'
+states_df = db.open_analysis_states_database(path=analysis_states_database_path)
 
-mouse_number = 56165
-sessions = [1,2,4]
-init_trial = 1
-end_trial = 22
+mouse_number = 401714
+sessions = [1]
+init_trial = [1,6,11]
+end_trial = [6,11,16]
 is_rest = None
 
 #  Select first data
@@ -55,6 +56,9 @@ parameters_alignment = {'make_template_from_trial': '1', 'gSig_filt': (5, 5), 'm
                         'strides': (48, 48), 'overlaps': (96, 96), 'upsample_factor_grid': 2, 'num_frames_split': 80,
                         'max_deviation_rigid': 15, 'shifts_opencv': True, 'use_cuda': False, 'nonneg_movie': True,
                         'border_nan': 'copy'}
+
+h_step = 10
+parameters_equalizer = {'make_template_from_trial': '1', 'equalizer': 'histogram_matching', 'histogram_step': h_step}
 
 gSig = 5
 gSiz = 4 * gSig + 1
@@ -82,18 +86,18 @@ c, dview, n_processes = cm.cluster.setup_cluster(backend='local',
                                                  single_thread=False)
 
 
-for session in [1,2,4]:
+for session in [1]:
     print(session)
     # Run decoding for group of data tha have the same cropping parameters (same mouse)
     selection = selected_rows.query('(session ==' + f'{session}' + ')')
     #for i in range(init_trial,end_trial):
     #    print(i)
-    #    selection = selected_rows.query('(trial ==' + f'{i}' + ')')
-    #    for j in range(len(selection)):
-    #        mouse_row = selection.iloc[j]
-    #        mouse_row = main_decoding(mouse_row)
-    #        states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
-    #        db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
+     #   selection = selected_rows.query('(trial ==' + f'{i}' + ')')
+     #   for j in range(len(selection)):
+     #       mouse_row = selection.iloc[j]
+     #       mouse_row = main_decoding(mouse_row)
+     #       states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row)
+     #       db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
 
     decoding_version = mouse_row.name[4]
     # Run cropping for the already decoded group
@@ -144,16 +148,13 @@ for session in [1,2,4]:
             db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
         alignment_version = row_new.name[7]
         #Run equalization
-        #selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, trial = 1, is_rest=0,
-                                #  decoding_v= 1,
-                                #  cropping_v = 1,
-                                #  motion_correction_v=1,
-                                # alignment_v=1)
-
-        #h_step = 10
-        #parameters_equalizer = {'make_template_from_trial': '1', 'equalizer': 'histogram_matching', 'histogram_step': h_step}
-        #states_df = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
-        #db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path=backup_path)
+        selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, trial = 1, is_rest=0,
+                                  decoding_v= decoding_version,
+                                  cropping_v = cropping_version,
+                                  motion_correction_v=motion_correction_version,
+                                 alignment_v=alignment_version)
+        states_df = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
+        db.save_analysis_states_database(states_df, analysis_states_database_path, backup_path)
 
         #SOURCE EXTRACTION IN ALIGNED (AND EQUALIZED FILES)
         selected_rows = db.select(states_df,'source_extraction',mouse = mouse_number, session = session, is_rest= is_rest,
@@ -174,7 +175,7 @@ for session in [1,2,4]:
 
 # evaluation
 dview.terminate()
-for session in [2,4]:
+for session in [1, 2,4]:
     print(session)
     # Run decoding for group of data tha have the same cropping parameters (same mouse)
     selection = selected_rows.query('(session ==' + f'{session}' + ')')
@@ -191,3 +192,42 @@ for session in [2,4]:
         states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
         db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path = backup_path)
 
+
+
+##########
+
+
+decoding_version = 1
+motion_correction_version = 1
+
+for session in [1,2,4]:
+    print(session)
+    # Run decoding for group of data tha have the same cropping parameters (same mouse)
+    selection = selected_rows.query('(session ==' + f'{session}' + ')')
+    # Run cropping for the already decoded group
+    for cropping_version in [1,2,3,4]:
+        #Run equalization
+        alignment_version = 1
+        selected_rows = db.select(states_df,'alignment',mouse = mouse_number,session=session, trial = 1, is_rest=0,
+                                  decoding_v= decoding_version,
+                                  cropping_v = cropping_version,
+                                  motion_correction_v=motion_correction_version,
+                                 alignment_v=alignment_version)
+        mouse_row_new = main_equalizing(selected_rows, states_df, parameters_equalizer, session_wise= True)
+        states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
+        db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path=backup_path)
+        alignment_version = mouse_row_new.name[7]
+        #SOURCE EXTRACTION IN ALIGNED (AND EQUALIZED FILES)
+        selected_rows = db.select(states_df,'source_extraction',mouse = mouse_number, session = session, is_rest= is_rest,
+                                  decoding_v = decoding_version,
+                                  cropping_v = cropping_version,
+                                  motion_correction_v = motion_correction_version,
+                                  alignment_v= alignment_version,
+                                  source_extraction_v=0)
+
+        ### all aligned videos are save in one file
+        aligned_row = selected_rows.iloc[0]
+        mouse_row_new = main_source_extraction(aligned_row, parameters_source_extraction, dview)
+        states_df = db.append_to_or_merge_with_states_df(states_df, mouse_row_new)
+        db.save_analysis_states_database(states_df, path=analysis_states_database_path, backup_path=backup_path)
+        source_extraction_version = mouse_row_new.name[8]

@@ -15,8 +15,7 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 # This should be in another file. Let's leave it here for now
-sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
-sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
+
 
 import matplotlib.pyplot as plt
 import src.configuration
@@ -37,14 +36,14 @@ import src.analysis.figures as figures
 import src.analysis.metrics as metrics
 
 # Paths
-analysis_states_database_path = 'references/analysis/analysis_states_database.xlsx'
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
 backup_path = 'references/analysis/backup/'
 
 states_df = db.open_analysis_states_database()
 mouse = 51565
 session = 1
 trial = 1
-is_rest = 1
+is_rest = None
 cropping_version = 1
 motion_correction_version = 1
 source_extraction_version =1

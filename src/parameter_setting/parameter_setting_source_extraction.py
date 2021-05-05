@@ -19,9 +19,6 @@ import psutil
 import logging
 import numpy as np
 
-# This should be in another file. Let's leave it here for now
-sys.path.append('/home/sebastian/Documents/Melisa/calcium_imaging_analysis/src/')
-sys.path.remove('/home/sebastian/Documents/calcium_imaging_analysis')
 
 import src.configuration
 import caiman as cm
@@ -32,7 +29,7 @@ import src.analysis.figures as figures
 import src.analysis.metrics as metrics
 
 # Paths to data base and back up
-analysis_states_database_path = 'references/analysis/analysis_states_database2.xlsx'
+analysis_states_database_path = os.environ['PROJECT_DIR'] + 'references/analysis/calcium_imaging_data_base_server_new.xlsx'
 backup_path = 'references/analysis/backup/'
 parameters_path = 'references/analysis/parameters_database.xlsx'
 
